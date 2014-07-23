@@ -70,46 +70,11 @@ function stmarks_globalJavascript() {
 	// http://stackoverflow.com/a/950146
 
 	$.getScript(
-		pathToScripts + 'resources-menu.js',
+		pathToScripts + 'navigation-menu.js',
 		function() {
 			stmarks_resourcesMenu();
 		}
 	);	
-	
-	$.getScript(
-		pathToScripts + 'faculty-journal.js',
-		function() {
-			stmarks_facultyJournal();
-		}
-	);
-		
-	$.getScript(
-		pathToScripts + 'hide-future-courses.js',
-		function() {
-			stmarks_hideFutureCourses();
-		}
-	);
-		
-	$.getScript(
-		pathToScripts + 'hide-page-lists-if-pages-hidden.js',
-		function() {
-			stmarks_hidePageListsIfPagesHidden();
-		}
-	);
-
-	$.getScript(
-		pathToScripts + 'discussion-permalinks.js',
-		function() {
-			stmarks_discussionPermalinks();
-		}
-	);
-	
-	$.getScript(
-		pathToScripts + 'grading-analytics.js',
-		function() {
-			stmarks_gradingAnalytics();
-		}
-	);
 }
 
 stmarks_globalJavascript();
