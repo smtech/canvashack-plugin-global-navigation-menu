@@ -116,7 +116,7 @@ var resources = {
 						{
 							title: 'All School Information',
 							// subtitle: 'Information, Organizations, Calendar',
-							url: '/courses/1277'
+							url: '/courses/2056'
 						},
 						{
 							title: 'Weekend Activities Sign-ups',
@@ -353,6 +353,7 @@ var coursesToHide = [
 	'97', // Faculty Resources
 	'497', // All School '12-'13
 	'1277', // All School '13-'14
+	'2056', // All School '14-'15
 	'489', // Canvas Training
 	'672', // Global Citizenship
 	'1294' // Modern Language Department
