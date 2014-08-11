@@ -72,7 +72,7 @@ function stmarks_globalJavascript() {
 	$.getScript(
 		pathToScripts + 'navigation-menu.js',
 		function() {
-			stmarks_resourcesMenu();
+			stmarks_navigationMenu();
 		}
 	);	
 }

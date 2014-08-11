@@ -415,7 +415,7 @@ function stmarks_appendMenu(m) {
 	navigationMenu.appendChild(menu);
 }
 
-function stmarks_resourcesMenu() {
+function stmarks_navigationMenu() {
 	// add the custom menu to the menubar
 	// if you wanted to add more menus, define another menu structure like resources and call appendMenu() with it as a parameter (menus would be added in the order that the appendMenu() calls occur)
 	stmarks_setUserClass();
