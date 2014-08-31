@@ -1,7 +1,45 @@
+<?php
+
+header('Content-Type: application/javascript');
+
+require_once('.ignore.custom-prefs-authentication.inc.php');
+require_once('smcanvaslib/config.inc.php');
+require_once(SMCANVASLIB_PATH . '/include/mysql.inc.php');
+
+if (isset($_REQUEST['user_id'])) {
+	if (is_numeric($_REQUEST['user_id'])) {
+		$userId = $_REQUEST['user_id'];
+	} else {
+		$userId = preg_replace('|.*users/(\d+)/?.*|', '$1', $_REQUEST['user_id']);
+	}
+}
+
+if (!isset($userId) || !strlen($userId)) {
+	exit;
+}
+$response = mysqlQuery("
+	SELECT * FROM `users`
+		WHERE
+			`id` = '" . $userId . "'
+");
+$userPrefs = $response->fetch_assoc();
+
+$response = mysqlQuery("
+	SELECT * FROM `courses`
+		WHERE
+			`menu-visible` = '0'
+");
+while ($c = $response->fetch_assoc()) {
+	$coursesToHide[] = $c['id'];
+}
+
+?>
+
 /*jslint browser: true, devel: true, eqeq: true, plusplus: true, sloppy: true, todo: true, vars: true, white: true */
 
 // types of user
 var USER_CLASS_STUDENT = 'student';
+var USER_CLASS_STAFF = 'staff';
 var USER_CLASS_FACULTY = 'faculty';
 var USER_CLASS_NO_MENU = 'no-menu';
 
@@ -33,16 +71,12 @@ var resources = {
 				{
 					title: 'General',
 					// style: colorStripe,
-					userClass: [USER_CLASS_FACULTY],
 					items: [
 						{
 							title: 'Faculty Resources',
 							// subtitle: 'Calendars, Forms, Policies, Guides',
+							userClass: [USER_CLASS_FACULTY],
 							url: '/courses/97'
-						},
-						{
-							title: 'Global Citizenship',
-							url: '/courses/672',
 						},
 						{
 							title: 'Academic Technology',
@@ -62,7 +96,13 @@ var resources = {
 							title: 'Modern Language Dept.',
 							url: '/courses/1294',
 							userDepartments: [USER_DEPARTMENT_MODERN_LANGUAGE]
-						}
+						},
+						{
+							title: 'Student Resources',
+							// subtitle: 'Information, Organizations, Calendar',
+							url: '/courses/2056'
+						},
+
 					]
 				},
 				{
@@ -113,11 +153,6 @@ var resources = {
 					title: 'On Campus',
 					// style: colorStripe,
 					items: [
-						{
-							title: 'All School Information',
-							// subtitle: 'Information, Organizations, Calendar',
-							url: '/courses/2056'
-						},
 						{
 							title: 'Weekend Activities Sign-ups',
 							// subtitle: 'from the Dean of Students&rsquo; Office',
@@ -283,48 +318,6 @@ var deptAcademicTechnology = [
 	'Brian Lester'
 ];
 
-function stmarks_setUserClass() {
-	var i;
-	
-	// check user name to Academic Technology
-	var userName = document.getElementsByClassName('user_long_name')[0].innerText;
-	// if not an individually allowed user, don't process them!
-	if (deptAcademicTechnology.indexOf(userName) !== -1) {
-		userDepartments.push(USER_DEPARTMENT_ACADEMIC_TECHNOLOGY);
-	}
-	
-	userClass = USER_CLASS_STUDENT;
-	
-	// check for membership in specific departments
-	var coursesMenu = document.getElementById('menu_enrollments').parentNode;
-	// check if the user is enrolled in more than courses
-	if (coursesMenu.children.length > 1) {
-		var accountsList = coursesMenu.children[coursesMenu.children.length - 1].children[1].children;
-		// skip the "View all accounts" link: length - 1
-		for (i = 0; i < accountsList.length - 1; i++) {
-			// TODO: USER_DEPARTMENTS could be an array and this wouldn't even need to be a switch statement
-			switch (accountsList[i].children[0].getAttribute('href')) {
-				case USER_DEPARTMENT_HISTORY:
-					userDepartments.push(USER_DEPARTMENT_HISTORY);
-					break;
-				case USER_DEPARTMENT_MODERN_LANGUAGE:
-					userDepartments.push(USER_DEPARTMENT_MODERN_LANGUAGE);
-					break;
-			}
-		}
-	}
-	
-	// check for Faculty Resources course to identify USER_CLASS_FACULTY
-	var coursesList = coursesMenu.children[0].children[2].children;
-	// skip the "View all courses" link: length - 1
-	for (i = 0; i < coursesList.length - 1; i++) {
-		if (coursesList[i].getAttribute('data-id') === '97') {
-			userClass = USER_CLASS_FACULTY;
-			return;
-		}
-	}
-}
-
 function stmarks_userClassVisible(menuObject) {
 	return !menuObject.userClass || menuObject.userClass.indexOf(userClass) > -1;
 }
@@ -349,15 +342,7 @@ function stmarks_userDepartmentsVisible(menuObject) {
 }
 
 // courses that (if they exist in Courses) are replicated in the Resources menu
-var coursesToHide = [
-	'97', // Faculty Resources
-	'497', // All School '12-'13
-	'1277', // All School '13-'14
-	'2056', // All School '14-'15
-	'489', // Canvas Training
-	'672', // Global Citizenship
-	'1294' // Modern Language Department
-];
+var coursesToHide = [<?php foreach($coursesToHide as $c) {if($c != $coursesToHide[0]) echo ','; echo "{$c}";} ?>];
 
 // remove courses from the Courses menu that have been replicated in custom menus
 function stmarks_hideCourses(courses) {
@@ -418,7 +403,7 @@ function stmarks_appendMenu(m) {
 function stmarks_navigationMenu() {
 	// add the custom menu to the menubar
 	// if you wanted to add more menus, define another menu structure like resources and call appendMenu() with it as a parameter (menus would be added in the order that the appendMenu() calls occur)
-	stmarks_setUserClass();
+	userClass = '<?= $userPrefs['role'] ?>';
 	if (userClass != USER_CLASS_NO_MENU) {
 		stmarks_appendMenu(resources);
 		stmarks_appendMenu(lionHub);
