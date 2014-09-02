@@ -17,13 +17,17 @@ if (isset($_REQUEST['user_id'])) {
 if (!isset($userId) || !strlen($userId)) {
 	exit;
 }
-$response = mysqlQuery("
+
+/* get the current user's preferences */
+$response = mysqlQuery("
 	SELECT * FROM `users`
 		WHERE
 			`id` = '" . $userId . "'
 ");
 $userPrefs = $response->fetch_assoc();
+$userPrefs['groups'] = unserialize($userPrefs['groups']);
 
+/* build our list of courses that should be removed from the Courses menu */
 $response = mysqlQuery("
 	SELECT * FROM `courses`
 		WHERE
@@ -33,313 +37,200 @@ while ($c = $response->fetch_assoc()) {
 	$coursesToHide[] = $c['id'];
 }
 
-?>
+/* build a set of regexp conditions to find this user's groups in serialized group lists hanging off of menu items */
+$userGroups = 'FALSE';
+if (is_array($userPrefs['groups'])) {
+	$userGroups == '';
+	foreach($userPrefs['groups'] as $g) {
+		$userGroups = (strlen($userGroups) ? " {$userGroups} OR " : '') . "`groups` REGEXP 'a:[0-9]+\{(i:[0-9]+;i:[0-9]+;)*i:[0-9]+;i:{$g};(i:[0-9]+;i:[0-9]+;)*\}'";
+	}
+}
 
+function isMenu($menuItem) {
+	return !is_numeric($menuItem['menu']);
+}
+
+function isColumn($menuItem) {
+	return !is_numeric($menuItem['column']) && !isMenu($menuItem);
+}
+
+function isSection($menuItem) {
+	return !is_numeric($menuItem['section']) && !isColumn($menuItem);
+}
+
+function isItem($menuItem) {
+	return is_numeric($menuItem['section']);
+}
+
+function nonempty($flag, $value) {
+	return (strlen($flag) ? $value : '');
+}
+
+function startMenu($menuItem) {
+	return '<a class="menu-item-title"' .
+		nonempty(
+			$menuItem['url'],
+			' href="' . $menuItem['url'] . '"'
+		) . nonempty(
+			$menuItem['target'],
+			' target="' . $menuItem['target'] . '"'
+		) . '>' . $menuItem['title'] . '<span class="menu-item-title-icon"/> <i class="icon-mini-arrow-down"/></a><div class="menu-item-drop"><table cellspacing="0"><tr>';
+}
+
+function endMenu() {
+	return '</tr></table></div>';
+}
+
+function startColumn($menuItem) {
+	return '<td class="menu-item-drop-column"' .
+		nonempty(
+			$menuItem['style'],
+			' style="' . $menuItem['style'] . '"'
+		) . '>';
+}
+
+function endColumn() {
+	return '</td>';
+}
+
+function startSection($menuItem) {
+	return nonempty(
+		$menuItem['title'],
+		'<span class="menu-item-heading"' .
+			nonempty(
+				$menuItem['style'],
+				' style="' . $menuItem['style'] . '"'
+			) . '>' . $menuItem['title'] . '</span>'
+		) . '<ul class="menu-item-drop-column-list"' . 
+		nonempty(
+			$menuItem['style'],
+			' style="' . $menuItem['style'] . '"'
+		) . '>';
+}
+
+function endSection() {
+	return '</ul>';
+}
+
+function menuItem($menuItem) {
+	return '<li' .
+		nonempty(
+			$menuItem['style'],
+			' style="' . $menuItem['style'] . '"'
+		) . '><a' . 
+		nonempty(
+			$menuItem['target'],
+			' target="' . $menuItem['target'] . '"'
+		) . nonempty(
+			$menuItem['url'],
+			' href="' . $menuItem['url'] . '"'
+		) . '><span class="name ellipsis">' . $menuItem['title'] . '</span>' .
+		nonempty(
+			$menuItem['subtitle'],
+			'<span class="subtitle">' . $menuItem['subtitle'] . '</span>'
+		) . '</a></li>';
+}
+
+/* build the menus */
+// TODO no doubt this could be elegantly wrapped up in a recursive function full of menu-related puns
+$menuHtml = array();
+$menus = mysqlQuery("
+	SELECT *
+		FROM `menus`
+		WHERE
+			`menu` IS NULL AND
+			(
+				`role` IS NULL OR
+				`role` = '" . $userPrefs['role'] . "'
+			) AND (
+				`groups` IS NULL OR
+				" . $userGroups . "
+			)
+		ORDER BY
+			`order` ASC,
+			`title` ASC
+");
+for ($i = 0; $m = $menus->fetch_assoc(); $i++) {
+	$menuHtml[$i] = startMenu($m);
+	$columns = mysqlQuery("
+		SELECT *
+			FROM `menus`
+			WHERE
+				`menu` = '" . $m['id'] . "' AND
+				`column` IS NULL AND
+				(
+					`role` IS NULL OR
+					`role` = '" . $userPrefs['role'] . "'
+				) AND (
+					`groups` IS NULL OR
+					" . $userGroups . "
+				)
+			ORDER BY
+				`order` ASC,
+				`title` ASC
+	");
+	while ($c = $columns->fetch_assoc()) {
+		$menuHtml[$i] .= startColumn($c);
+		$sections = mysqlQuery("
+			SELECT *
+				FROM `menus`
+				WHERE
+					`menu` = '" . $m['id'] . "' AND
+					`column` = '" . $c['id'] . "' AND
+					`section` IS NULL AND
+					(
+						`role` IS NULL OR
+						`role` = '" . $userPrefs['role'] . "'
+					) AND (
+						`groups` IS NULL OR
+						" . $userGroups . "
+					)
+				ORDER BY
+					`order` ASC,
+					`title` ASC
+		");
+		while ($s = $sections->fetch_assoc()) {
+			$menuHtml[$i] .= startSection($s);
+			$items = mysqlQuery("
+				SELECT *
+					FROM `menus`
+					WHERE
+						`menu` = '" . $m['id'] . "' AND
+						`column` = '" . $c['id'] . "' AND
+						`section` = '" . $s['id'] . "' AND
+						(
+							`role` IS NULL OR
+							`role` = '" . $userPrefs['role'] . "'
+						) AND (
+							`groups` IS NULL OR
+							" . $userGroups . "
+						)
+					ORDER BY
+						`order` ASC,
+						`title` ASC
+			");
+			while ($item = $items->fetch_assoc()) {
+				$menuHtml[$i] .= menuItem($item);
+			}
+			$menuHtml[$i] .= endSection();
+		}
+		$menuItem[$i] .= endColumn();
+	}
+	$menuHtml[$i] .= endMenu();
+}
+
+?>
 /*jslint browser: true, devel: true, eqeq: true, plusplus: true, sloppy: true, todo: true, vars: true, white: true */
 
 // types of user
+// TODO pull this from DB too
 var USER_CLASS_STUDENT = 'student';
 var USER_CLASS_STAFF = 'staff';
 var USER_CLASS_FACULTY = 'faculty';
 var USER_CLASS_NO_MENU = 'no-menu';
 
-var USER_DEPARTMENT_HISTORY = '/accounts/79';
-var USER_DEPARTMENT_MODERN_LANGUAGE = '/accounts/83';
-var USER_DEPARTMENT_ACADEMIC_TECHNOLOGY = 'academic-technology';
-
-// default to hiding the menu
-var userClass = USER_CLASS_NO_MENU;
-var userDepartments = [];
-
-/* define your menu here
-
-   Some design thoughts:
-   		* More than about a dozen items is too tall for older screens
-   		* More than one column is often too wide for older screens
-   		* Subtitles are nice... but hard to read and make entries taller
-*/
-var colorStripe = ''; //'background: #fffffe; border-bottom: #9FA7AF solid 1px; border-right: #9FA7AF solid 1px; border-top: #ffffff solid 1px; border-left: #ffffff solid 1px;';
-var resources = {
-	title: 'Resources', // required
-	// url: optional,
-	// target: optional,
-	// an array of columns to display (don't go overboard here!)
-	columns: [
-		{
-			// columns can be divided into titled sections
-			sections: [
-				{
-					title: 'General',
-					// style: colorStripe,
-					items: [
-						{
-							title: 'Faculty Resources',
-							// subtitle: 'Calendars, Forms, Policies, Guides',
-							userClass: [USER_CLASS_FACULTY],
-							url: '/courses/97'
-						},
-						{
-							title: 'Academic Technology',
-							subtitle: 'Shared files',
-							target: '_blank',
-							url: 'https://drive.google.com/a/stmarksschool.org/?tab=co#folders/0Bx1atGpuKjk9UHJ3MU5nRms5Zms',
-							userDepartments: [USER_DEPARTMENT_ACADEMIC_TECHNOLOGY]
-						},
-						{
-							title: 'History Dept.',
-							subtitle: 'Shared files',
-							target: '_blank',
-							url: 'https://drive.google.com/a/stmarksschool.org/?tab=mo#folders/0Bxkl1PbtN3mKa1B0Ym5nSXoxU2M',
-							userDepartments: [USER_DEPARTMENT_HISTORY]
-						},
-						{
-							title: 'Modern Language Dept.',
-							url: '/courses/1294',
-							userDepartments: [USER_DEPARTMENT_MODERN_LANGUAGE]
-						},
-						{
-							title: 'Student Resources',
-							// subtitle: 'Information, Organizations, Calendar',
-							url: '/courses/2056'
-						},
-
-					]
-				},
-				{
-					// title, target, url are all properties of columns
-					title: 'The Center for Innovation<br />in Teaching and Learning',
-					items: [
-						// each item can have title, subtitle, target and url
-						{
-							title: 'Information for Students',
-							subtitle: 'Student Enrichment &amp; Academic Support',
-							url: '/courses/491'
-						},
-						{
-							title: 'Information for Faculty',
-							subtitle: 'Profesional Development &amp; Academic Support',
-							url: '/courses/97/wiki/the-center-for-innovation-in-teaching-and-learning',
-							userClass: [USER_CLASS_FACULTY]
-						},
-						{
-							title: 'Writing Lab',
-							url: '/courses/491/wiki/writing-lab'
-						},
-						{
-							title: 'Mathematics Lab',
-							url: '/courses/491/wiki/mathematics-lab'
-						}
-					]
-				},
-				{
-					title: 'Research &amp; Writing',
-					// style: colorStripe,
-					items: [
-						{
-							title: 'Library',
-							url: 'http://library.stmarksschool.org',
-							subtitle: 'Catalog, Online Resources, References',
-							target: '_blank'
-						},
-						{
-							title: 'Writing Manual',
-							subtitle: 'All the steps you need to write',
-							target: '_blank',
-							url: 'https://drive.google.com/a/stmarksschool.org/folderview?id=0ByGbqFAT3Vy1aXdRY2hoNlY4WjA&usp=sharing'
-						}
-					]
-				},
-				{
-					title: 'On Campus',
-					// style: colorStripe,
-					items: [
-						{
-							title: 'Weekend Activities Sign-ups',
-							// subtitle: 'from the Dean of Students&rsquo; Office',
-							target: '_blank',
-							url: 'http://www2.stmarksschool.org',
-							userClass: [USER_CLASS_STUDENT]
-						},
-						{
-							title: 'FLIK Menu',
-							// subtitle: 'Dining Services',
-							target: '_blank',
-							url: 'http://www.myschooldining.com/SMS/?cmd=menus'
-						},
-						{
-							title: 'Athletics',
-							// subtitle: 'Schedules, Scores and News',
-							target: '_blank',
-							url: 'http://www.stmarksschool.org/athletics/teamlisting.aspx'
-						}
-					]
-				}
-			]
-		}
-	]
-};
-
-var lionHub = {
-	title: 'Lion Hub',
-	columns: [
-		{
-			// style: 'optional CSS goes here',
-			sections: [
-				{
-					title: 'Training &amp; Support',
-					items: [
-						{
-							title: 'Canvas Training',
-							// subtitle: 'What you need to know',
-							url: '/courses/489',
-							userClass: [USER_CLASS_FACULTY]
-						},
-						{
-							title: 'Lynda.com',
-							// subtitle: 'Software Training &amp; Tutorials',
-							target: '_blank',
-							url: 'http://iplogin.lynda.com'
-						},
-						{
-							title: 'SMS',
-							// subtitle: 'Ye Olde Portal',
-							target: '_blank',
-							url: 'http://sms.stmarksschool.org'
-						},
-						{
-							title: 'Tech Support Documents',
-							// subtitle: 'Directions for connections, on Lion Hub',
-							target: '_blank',
-							url: 'http://www.stmarksschool.org/academics/technology/Tech-Docs/index.aspx',
-							userClass: [USER_CLASS_FACULTY]
-						}/*,
-						{
-							title: 'Human Resource Documents',
-							subtitle: 'Family & Medical Leave Act, on Lion Hub',
-							target: '_blank',
-							url: 'https://lionhub.stmarksschool.org/pages/human-resource-documents',
-							userClass: [USER_CLASS_FACULTY]
-						}*/
-					]
-				},
-				{
-					title: 'Communication &amp; Storage',
-					//style: 'optional CSS goes here',
-					items: [
-						{
-							title: 'Gmail',
-							// subtitle: 'Google Apps for Education',
-							target: '_blank',
-							// style: 'optional CSS goes here',
-							url: 'http://mail.stmarksschool.org'
-						},
-						{
-							title: 'Google Drive',
-							// subtitle: 'Google Apps for Education',
-							target: '_blank',
-							url: 'http://drive.google.com/a/stmarksschool.org/#my-drive'
-						},
-						{
-							title: 'Minerva Web Access',
-							// subtitle: 'Home Directories and Shared Files',
-							target: '_blank',
-							url: 'http://minerva.stmarksschool.org/',
-							userClass: [USER_CLASS_FACULTY]
-						},
-						{
-							title: 'Athena Web Access',
-							// subtitle: 'Home Directories and Shared Files',
-							target: '_blank',
-							url: 'http://athena.stmarksschoo.org/',
-							userClass: [USER_CLASS_STUDENT]
-						}
-					]
-				},
-				{
-					title: 'Academics Office',
-					items: [
-						{
-							title: 'Curricuplan',
-							subtitle: 'Curriculum mapping',
-							target: '_blank',
-							url: 'http://hosting.curricuplan.com',
-							userClass: [USER_CLASS_FACULTY]
-						},
-						{
-							title: 'FAWeb',
-							subtitle: 'Window Grades &amp; Comments',
-							target: '_blank',
-							url: 'http://faweb.stmarksschool.org',
-							userClass: [USER_CLASS_FACULTY]
-						},
-						{
-							title: 'NetClassroom',
-							subtitle: 'Course Registration',
-							target: '_blank',
-							url: 'http://netclassroom.stmarksschool.org'
-						}
-					]
-				},
-				{
-					title: 'Service Desks',
-					userClass: [USER_CLASS_FACULTY],
-					// style: colorStripe,
-					items: [
-						{
-							title: ' Technology Help Desk',
-							// subtitle: 'Technology Issues',
-							target: '_blank',
-							url: 'http://stmarks.zendesk.com'
-						},
-						{
-							title: 'School Dude',
-							// subtitle: 'Facilities Requests (School ID 615666807)',
-							target: '_blank',
-							url: 'http://www.myschoolbuilding.com/myschoolbuilding/msbdefault_email.asp?frompage=myrequest.asp'
-						},
-						{
-							title: 'Communications Request',
-							// subtitle: 'Publications, Branded Items, Website Updates',
-							target: '_blank',
-							url: 'http://www.stmarksschool.org/about-st-marks/communications-department/index.aspx'
-						}
-					]
-				}
-			]
-		}
-	]
-};
-
-// if the Faculty Resources item is in the Courses menu, this person is faculty and should get faculty-specific resources
-var facultyCourseId = '97';
-
-var deptAcademicTechnology = [
-	'Seth Battis',
-	'Brian Lester'
-];
-
-function stmarks_userClassVisible(menuObject) {
-	return !menuObject.userClass || menuObject.userClass.indexOf(userClass) > -1;
-}
-
-function stmarks_userDepartmentsVisible(menuObject) {
-	var i;
-	
-	// if no departmental permissions are set, it's fine
-	if (!menuObject.userDepartments) {
-		return true;
-	}
-	
-	// if one of the user's departments matches the departmental permissions, it's fine
-	for (i = 0; i < userDepartments.length; i++) {
-		if (menuObject.userDepartments.indexOf(userDepartments[i]) > -1) {
-			return true;
-		}
-	}
-	
-	// not visible
-	return false;
-}
+// the class of the current user
+var userClass = <?= (strlen($userPrefs['role']) ? "'{$userPrefs['role']}'" : 'USER_CLASS_NO_MENU') ?>;
 
 // courses that (if they exist in Courses) are replicated in the Resources menu
 var coursesToHide = [<?php foreach($coursesToHide as $c) {if($c != $coursesToHide[0]) echo ','; echo "{$c}";} ?>];
@@ -357,45 +248,10 @@ function stmarks_hideCourses(courses) {
 }
 
 // parse the array/object structure above into the HTML that represents a dropdown menu and add it to the right of the existing menubar
-function stmarks_appendMenu(m) {
-	var i, j, k;
-
+function stmarks_appendMenu(html) {
 	var navigationMenu = document.getElementById("menu");
 	var menu = document.createElement('li');
 	menu.setAttribute('class', 'menu-item');
-	var html = '<a class="menu-item-title"' + (m.url !== undefined ? ' href="' + m.url + '"' : '') + (m.target !== undefined ? ' target="' + m.target + '"' : '') + '>' + m.title + '<span class="menu-item-title-icon"/> <i class="icon-mini-arrow-down"/></a>';
-
-	html += '<div class="menu-item-drop"><table cellspacing="0"><tr>';
-
-	for(i = 0; i < m.columns.length; i++) {
-		if (
-			stmarks_userClassVisible(m.columns[i]) &&
-			stmarks_userDepartmentsVisible(m.columns[i])
-		) {
-			html += '<td class="menu-item-drop-column"' + (m.columns[i].style !== undefined ? ' style="' + m.columns[i].style + '"': '') + '>';
-			for (j = 0; j < m.columns[i].sections.length; j++) {
-				if (
-					stmarks_userClassVisible(m.columns[i].sections[j]) &&
-					stmarks_userDepartmentsVisible(m.columns[i].sections[j])
-				) {
-					html += (m.columns[i].sections[j].title !== undefined ? '<span class="menu-item-heading"' + (m.columns[i].sections[j].style !== undefined ? ' style="' + m.columns[i].sections[j].style + '"' : '') + '>' + m.columns[i].sections[j].title + '</span>' : '');
-					html += '<ul class="menu-item-drop-column-list"' + (m.columns[i].sections[j].style !== undefined ? ' style="' + m.columns[i].sections[j].style + '"' : '') + '>';
-		
-					for (k = 0; k < m.columns[i].sections[j].items.length; k++) {
-						if (
-							stmarks_userClassVisible(m.columns[i].sections[j].items[k]) &&
-							stmarks_userDepartmentsVisible(m.columns[i].sections[j].items[k])
-						) {
-							html += '<li' + (m.columns[i].sections[j].items[k].style !== undefined ? ' style="' + m.columns[i].sections[j].items[k].style + '"' : '') + '><a' + (m.columns[i].sections[j].items[k].target !== undefined ? ' target="' + m.columns[i].sections[j].items[k].target + '"' : '') + (m.columns[i].sections[j].items[k].url !== undefined ? ' href="' + m.columns[i].sections[j].items[k].url + '"' : '') + '><span class="name ellipsis">' + m.columns[i].sections[j].items[k].title + '</span>' + (m.columns[i].sections[j].items[k].subtitle !== undefined ? '<span class="subtitle">' + m.columns[i].sections[j].items[k].subtitle + '</span>' : '') + '</a></li>';
-						}
-					}
-					html += '</ul>';
-				}
-			}
-			html += '</td>';
-		}
-	}
-	html += '</tr></table></div>';
 	menu.innerHTML = html;
 	navigationMenu.appendChild(menu);
 }
@@ -403,10 +259,12 @@ function stmarks_appendMenu(m) {
 function stmarks_navigationMenu() {
 	// add the custom menu to the menubar
 	// if you wanted to add more menus, define another menu structure like resources and call appendMenu() with it as a parameter (menus would be added in the order that the appendMenu() calls occur)
-	userClass = '<?= $userPrefs['role'] ?>';
 	if (userClass != USER_CLASS_NO_MENU) {
-		stmarks_appendMenu(resources);
-		stmarks_appendMenu(lionHub);
+		// append menus
+<?php
+		foreach ($menuHtml as $m) {
+			echo "\t\tstmarks_appendMenu('{$m}');\n";
+		} ?>
 		
 		// hide courses last, since some userClass identification is based on course enrollments!
 		stmarks_hideCourses(coursesToHide);
