@@ -2,9 +2,9 @@
 
 header('Content-Type: application/javascript');
 
-require_once('.ignore.custom-prefs-authentication.inc.php');
-require_once('smcanvaslib/config.inc.php');
+require_once(__DIR__ . '/config.inc.php');
 require_once(SMCANVASLIB_PATH . '/include/mysql.inc.php');
+require_once(SMCANVASLIB_PATH . '/include/cache.inc.php');
 
 if (isset($_REQUEST['user_id'])) {
 	if (is_numeric($_REQUEST['user_id'])) {
@@ -35,15 +35,6 @@ $response = mysqlQuery("
 ");
 while ($c = $response->fetch_assoc()) {
 	$coursesToHide[] = $c['id'];
-}
-
-/* build a set of regexp conditions to find this user's groups in serialized group lists hanging off of menu items */
-$userGroups = 'FALSE';
-if (is_array($userPrefs['groups'])) {
-	$userGroups == '';
-	foreach($userPrefs['groups'] as $g) {
-		$userGroups = (strlen($userGroups) ? " {$userGroups} OR " : '') . "`groups` REGEXP 'a:[0-9]+\{(i:[0-9]+;i:[0-9]+;)*i:[0-9]+;i:{$g};(i:[0-9]+;i:[0-9]+;)*\}'";
-	}
 }
 
 function isMenu($menuItem) {
@@ -131,33 +122,25 @@ function menuItem($menuItem) {
 		) . '</a></li>';
 }
 
-/* build the menus */
-// TODO no doubt this could be elegantly wrapped up in a recursive function full of menu-related puns
-$menuHtml = array();
-$menus = mysqlQuery("
-	SELECT *
-		FROM `menus`
-		WHERE
-			`menu` IS NULL AND
-			(
-				`role` IS NULL OR
-				`role` = '" . $userPrefs['role'] . "'
-			) AND (
-				`groups` IS NULL OR
-				" . $userGroups . "
-			)
-		ORDER BY
-			`order` ASC,
-			`title` ASC
-");
-for ($i = 0; $m = $menus->fetch_assoc(); $i++) {
-	$menuHtml[$i] = startMenu($m);
-	$columns = mysqlQuery("
+$menuHtml = getCache('user', $userPrefs['id'], 'menus');
+if (!$menuHtml) {
+	/* build a set of regexp conditions to find this user's groups in serialized group lists hanging off of menu items */
+	$userGroups = 'FALSE';
+	if (is_array($userPrefs['groups'])) {
+		$userGroups == '';
+		foreach($userPrefs['groups'] as $g) {
+			$userGroups = (strlen($userGroups) ? " {$userGroups} OR " : '') . "`groups` REGEXP 'a:[0-9]+\{(i:[0-9]+;i:[0-9]+;)*i:[0-9]+;i:{$g};(i:[0-9]+;i:[0-9]+;)*\}'";
+		}
+	}
+	
+	/* build the menus */
+	// TODO no doubt this could be elegantly wrapped up in a recursive function full of menu-related puns
+	$menuHtml = array();
+	$menus = mysqlQuery("
 		SELECT *
 			FROM `menus`
 			WHERE
-				`menu` = '" . $m['id'] . "' AND
-				`column` IS NULL AND
+				`menu` IS NULL AND
 				(
 					`role` IS NULL OR
 					`role` = '" . $userPrefs['role'] . "'
@@ -169,15 +152,14 @@ for ($i = 0; $m = $menus->fetch_assoc(); $i++) {
 				`order` ASC,
 				`title` ASC
 	");
-	while ($c = $columns->fetch_assoc()) {
-		$menuHtml[$i] .= startColumn($c);
-		$sections = mysqlQuery("
+	for ($i = 0; $m = $menus->fetch_assoc(); $i++) {
+		$menuHtml[$i] = startMenu($m);
+		$columns = mysqlQuery("
 			SELECT *
 				FROM `menus`
 				WHERE
 					`menu` = '" . $m['id'] . "' AND
-					`column` = '" . $c['id'] . "' AND
-					`section` IS NULL AND
+					`column` IS NULL AND
 					(
 						`role` IS NULL OR
 						`role` = '" . $userPrefs['role'] . "'
@@ -189,15 +171,15 @@ for ($i = 0; $m = $menus->fetch_assoc(); $i++) {
 					`order` ASC,
 					`title` ASC
 		");
-		while ($s = $sections->fetch_assoc()) {
-			$menuHtml[$i] .= startSection($s);
-			$items = mysqlQuery("
+		while ($c = $columns->fetch_assoc()) {
+			$menuHtml[$i] .= startColumn($c);
+			$sections = mysqlQuery("
 				SELECT *
 					FROM `menus`
 					WHERE
 						`menu` = '" . $m['id'] . "' AND
 						`column` = '" . $c['id'] . "' AND
-						`section` = '" . $s['id'] . "' AND
+						`section` IS NULL AND
 						(
 							`role` IS NULL OR
 							`role` = '" . $userPrefs['role'] . "'
@@ -209,14 +191,36 @@ for ($i = 0; $m = $menus->fetch_assoc(); $i++) {
 						`order` ASC,
 						`title` ASC
 			");
-			while ($item = $items->fetch_assoc()) {
-				$menuHtml[$i] .= menuItem($item);
+			while ($s = $sections->fetch_assoc()) {
+				$menuHtml[$i] .= startSection($s);
+				$items = mysqlQuery("
+					SELECT *
+						FROM `menus`
+						WHERE
+							`menu` = '" . $m['id'] . "' AND
+							`column` = '" . $c['id'] . "' AND
+							`section` = '" . $s['id'] . "' AND
+							(
+								`role` IS NULL OR
+								`role` = '" . $userPrefs['role'] . "'
+							) AND (
+								`groups` IS NULL OR
+								" . $userGroups . "
+							)
+						ORDER BY
+							`order` ASC,
+							`title` ASC
+				");
+				while ($item = $items->fetch_assoc()) {
+					$menuHtml[$i] .= menuItem($item);
+				}
+				$menuHtml[$i] .= endSection();
 			}
-			$menuHtml[$i] .= endSection();
+			$menuItem[$i] .= endColumn();
 		}
-		$menuItem[$i] .= endColumn();
+		$menuHtml[$i] .= endMenu();
 	}
-	$menuHtml[$i] .= endMenu();
+	setCache('user', $userPrefs['id'], 'menus', $menuHtml);
 }
 
 ?>
