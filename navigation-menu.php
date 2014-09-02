@@ -217,7 +217,7 @@ if (!$menuHtml) {
 				}
 				$menuHtml[$i] .= endSection();
 			}
-			$menuItem[$i] .= endColumn();
+			$menuHtml[$i] .= endColumn();
 		}
 		$menuHtml[$i] .= endMenu();
 	}
