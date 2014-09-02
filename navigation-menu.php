@@ -114,7 +114,7 @@ function menuItem($menuItem) {
 			' target="' . $menuItem['target'] . '"'
 		) . nonempty(
 			$menuItem['url'],
-			' href="' . $menuItem['url'] . '"'
+			' href="' . /*$menuItem['url']*/ APP_URL . "/click.php?item={$menuItem['id']}&canvas_instance={$_REQUEST['canvas_instance']}" . '"'
 		) . '><span class="name ellipsis">' . $menuItem['title'] . '</span>' .
 		nonempty(
 			$menuItem['subtitle'],

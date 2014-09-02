@@ -2,7 +2,8 @@
 
 var STMARKS = {
 	waitForDOMDelay: 100, // milliseconds
-	user_id: document.getElementById('identity').getElementsByClassName('user_id')[0].innerHTML
+	user_id: document.getElementById('identity').getElementsByClassName('user_id')[0].innerHTML,
+	canvas_instance: window.location.host
 };
 
 /* wait for a particular DOM element to be ready (i.e. created) and then call
@@ -71,7 +72,7 @@ function stmarks_globalJavascript() {
 	// http://stackoverflow.com/a/950146
 
 	$.getScript(
-		pathToScripts + 'navigation-menu.php?user_id=' + STMARKS.user_id,
+		pathToScripts + 'navigation-menu.php?user_id=' + STMARKS.user_id + '&canvas_instance=' + STMARKS.canvas_instance,
 		function() {
 			stmarks_navigationMenu();
 		}
