@@ -7,7 +7,7 @@
 #
 # Host: 127.0.0.1 (MySQL 5.5.38-0ubuntu0.12.04.1)
 # Database: canvas-custom-prefs
-# Generation Time: 2014-09-02 01:59:32 +0000
+# Generation Time: 2014-09-02 03:06:17 +0000
 # ************************************************************
 
 
@@ -89,10 +89,24 @@ CREATE TABLE `menu-caches` (
 
 
 
-# Dump of table menus
+# Dump of table menu-clicks
 # ------------------------------------------------------------
 
-CREATE TABLE `menus` (
+CREATE TABLE `menu-clicks` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `user` int(11) NOT NULL,
+  `source` text NOT NULL,
+  `destination` text NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+
+
+# Dump of table menu-items
+# ------------------------------------------------------------
+
+CREATE TABLE `menu-items` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `menu` int(11) DEFAULT NULL,
   `column` int(11) DEFAULT NULL,
@@ -108,10 +122,10 @@ CREATE TABLE `menus` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-LOCK TABLES `menus` WRITE;
-/*!40000 ALTER TABLE `menus` DISABLE KEYS */;
+LOCK TABLES `menu-items` WRITE;
+/*!40000 ALTER TABLE `menu-items` DISABLE KEYS */;
 
-INSERT INTO `menus` (`id`, `menu`, `column`, `section`, `order`, `title`, `subtitle`, `style`, `target`, `url`, `groups`, `role`)
+INSERT INTO `menu-items` (`id`, `menu`, `column`, `section`, `order`, `title`, `subtitle`, `style`, `target`, `url`, `groups`, `role`)
 VALUES
 	(1,NULL,NULL,NULL,1,'Resources',NULL,NULL,NULL,NULL,NULL,NULL),
 	(2,1,41,NULL,1,'General',NULL,NULL,NULL,NULL,NULL,'faculty'),
@@ -156,7 +170,7 @@ VALUES
 	(41,1,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
 	(42,21,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
 
-/*!40000 ALTER TABLE `menus` ENABLE KEYS */;
+/*!40000 ALTER TABLE `menu-items` ENABLE KEYS */;
 UNLOCK TABLES;
 
 

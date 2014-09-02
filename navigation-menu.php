@@ -104,6 +104,7 @@ function endSection() {
 }
 
 function menuItem($menuItem) {
+	global $userPrefs;
 	return '<li' .
 		nonempty(
 			$menuItem['style'],
@@ -114,7 +115,7 @@ function menuItem($menuItem) {
 			' target="' . $menuItem['target'] . '"'
 		) . nonempty(
 			$menuItem['url'],
-			' href="' . /*$menuItem['url']*/ APP_URL . "/click.php?item={$menuItem['id']}&canvas_instance={$_REQUEST['canvas_instance']}" . '"'
+			' href="' . /*$menuItem['url']*/ APP_URL . "/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@" . '"'
 		) . '><span class="name ellipsis">' . $menuItem['title'] . '</span>' .
 		nonempty(
 			$menuItem['subtitle'],
@@ -138,7 +139,7 @@ if (!$menuHtml) {
 	$menuHtml = array();
 	$menus = mysqlQuery("
 		SELECT *
-			FROM `menus`
+			FROM `menu-items`
 			WHERE
 				`menu` IS NULL AND
 				(
@@ -156,7 +157,7 @@ if (!$menuHtml) {
 		$menuHtml[$i] = startMenu($m);
 		$columns = mysqlQuery("
 			SELECT *
-				FROM `menus`
+				FROM `menu-items`
 				WHERE
 					`menu` = '" . $m['id'] . "' AND
 					`column` IS NULL AND
@@ -175,7 +176,7 @@ if (!$menuHtml) {
 			$menuHtml[$i] .= startColumn($c);
 			$sections = mysqlQuery("
 				SELECT *
-					FROM `menus`
+					FROM `menu-items`
 					WHERE
 						`menu` = '" . $m['id'] . "' AND
 						`column` = '" . $c['id'] . "' AND
@@ -195,7 +196,7 @@ if (!$menuHtml) {
 				$menuHtml[$i] .= startSection($s);
 				$items = mysqlQuery("
 					SELECT *
-						FROM `menus`
+						FROM `menu-items`
 						WHERE
 							`menu` = '" . $m['id'] . "' AND
 							`column` = '" . $c['id'] . "' AND
@@ -222,6 +223,8 @@ if (!$menuHtml) {
 	}
 	setCache('user', $userPrefs['id'], 'menus', $menuHtml);
 }
+
+$menuHtml = str_replace('@@LOCATION@@', $_REQUEST['location'], $menuHtml);
 
 ?>
 /*jslint browser: true, devel: true, eqeq: true, plusplus: true, sloppy: true, todo: true, vars: true, white: true */

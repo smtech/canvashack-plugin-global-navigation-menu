@@ -72,7 +72,7 @@ function stmarks_globalJavascript() {
 	// http://stackoverflow.com/a/950146
 
 	$.getScript(
-		pathToScripts + 'navigation-menu.php?user_id=' + STMARKS.user_id + '&canvas_instance=' + STMARKS.canvas_instance,
+		pathToScripts + 'navigation-menu.php?user_id=' + STMARKS.user_id + '&location=' + window.location,
 		function() {
 			stmarks_navigationMenu();
 		}

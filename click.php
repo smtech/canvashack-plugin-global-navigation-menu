@@ -7,12 +7,26 @@ if(isset($_REQUEST['item'])) {
 	// FIXME should really enforce roles/groups restrictions (although they are really only cosmetic)
 	$response = mysqlQuery("
 		SELECT *
-			FROM `menus`
+			FROM `menu-items`
 			WHERE
 				`id` = '{$_REQUEST['item']}'
 	");
 	$item = $response->fetch_assoc();
-	$location = ($item['url'][0] == '/' ? "https://{$_REQUEST['canvas_instance']}{$item['url']}" : $item['url']);
+	$canvasInstance = parse_url($_REQUEST['location'], PHP_URL_HOST);
+	$location = ($item['url'][0] == '/' ? "https://{$canvasInstance}{$item['url']}" : $item['url']);
+	mysqlQuery("
+		INSERT
+			INTO `menu-clicks`
+			(
+				`user`,
+				`source`,
+				`destination`
+			) VALUES (
+				'{$_REQUEST['user_id']}',
+				'{$_REQUEST['location']}',
+				'{$location}'
+			)
+	");
 	header("Location: {$location}");
 	exit;
 }
