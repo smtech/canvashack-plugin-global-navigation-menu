@@ -240,7 +240,7 @@ var USER_CLASS_NO_MENU = 'no-menu';
 var userClass = <?= (strlen($userPrefs['role']) ? "'{$userPrefs['role']}'" : 'USER_CLASS_NO_MENU') ?>;
 
 // courses that (if they exist in Courses) are replicated in the Resources menu
-var coursesToHide = [<?php foreach($coursesToHide as $c) {if($c != $coursesToHide[0]) echo ','; echo "{$c}";} ?>];
+var coursesToHide = [<?php foreach($coursesToHide as $c) {if($c != $coursesToHide[0]) echo ','; echo "\"{$c}\"";} ?>];
 
 // remove courses from the Courses menu that have been replicated in custom menus
 function stmarks_hideCourses(courses) {
