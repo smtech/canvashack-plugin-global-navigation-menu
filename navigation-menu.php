@@ -2,6 +2,7 @@
 
 header('Content-Type: application/javascript');
 
+require_once(__DIR__ . '/.ignore.custom-prefs-authentication.inc.php');
 require_once(__DIR__ . '/config.inc.php');
 require_once(SMCANVASLIB_PATH . '/include/mysql.inc.php');
 require_once(SMCANVASLIB_PATH . '/include/cache.inc.php');
@@ -61,7 +62,7 @@ function startMenu($menuItem) {
 	return '<a class="menu-item-title"' .
 		nonempty(
 			$menuItem['url'],
-			' href="' . $menuItem['url'] . '"'
+			' href="' . APP_URL . "/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@" . '"'
 		) . nonempty(
 			$menuItem['target'],
 			' target="' . $menuItem['target'] . '"'
@@ -115,7 +116,7 @@ function menuItem($menuItem) {
 			' target="' . $menuItem['target'] . '"'
 		) . nonempty(
 			$menuItem['url'],
-			' href="' . /*$menuItem['url']*/ APP_URL . "/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@" . '"'
+			' href="' . APP_URL . "/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@" . '"'
 		) . '><span class="name ellipsis">' . $menuItem['title'] . '</span>' .
 		nonempty(
 			$menuItem['subtitle'],
