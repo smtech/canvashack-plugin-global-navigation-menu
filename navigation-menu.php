@@ -59,6 +59,7 @@ function nonempty($flag, $value) {
 }
 
 function startMenu($menuItem) {
+	global $userPrefs;
 	return '<a class="menu-item-title"' .
 		nonempty(
 			$menuItem['url'],
