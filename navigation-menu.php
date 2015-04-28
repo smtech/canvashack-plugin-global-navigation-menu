@@ -58,7 +58,7 @@ function nonempty($flag, $value) {
 	return (strlen($flag) ? $value : '');
 }
 
-function startMenu($menuItem) {
+function startMenu($menuItem, $columns = 1) {
 	global $userPrefs;
 	return '<a class="menu-item-title"' .
 		nonempty(
@@ -67,7 +67,7 @@ function startMenu($menuItem) {
 		) . nonempty(
 			$menuItem['target'],
 			' target="' . $menuItem['target'] . '"'
-		) . '>' . $menuItem['title'] . '<span class="menu-item-title-icon"/> <i class="icon-mini-arrow-down"/></a><div class="menu-item-drop"><table cellspacing="0"><tr>';
+		) . '>' . $menuItem['title'] . '<span class="menu-item-title-icon"/>' . ($columns > 0 ? ' <i class="icon-mini-arrow-down"/>' : '') . '</a><div class="menu-item-drop"><table cellspacing="0"><tr>';
 }
 
 function endMenu() {
@@ -156,7 +156,6 @@ if (!$menuHtml) {
 				`title` ASC
 	");
 	for ($i = 0; $m = $menus->fetch_assoc(); $i++) {
-		$menuHtml[$i] = startMenu($m);
 		$columns = mysqlQuery("
 			SELECT *
 				FROM `menu-items`
@@ -174,6 +173,7 @@ if (!$menuHtml) {
 					`order` ASC,
 					`title` ASC
 		");
+		$menuHtml[$i] = startMenu($m, $columns->num_rows);
 		while ($c = $columns->fetch_assoc()) {
 			$menuHtml[$i] .= startColumn($c);
 			$sections = mysqlQuery("
