@@ -1,0 +1,85 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "This file is @generated automatically"
+    ],
+    "hash": "bbb2f46e806abdbfb95fece78461ad03",
+    "content-hash": "ec137d31fcfac3339049067a40c5b9c8",
+    "packages": [
+        {
+            "name": "battis/appmetadata",
+            "version": "v1.2.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/battis/appmetadata.git",
+                "reference": "a97bdc20627008ed165b638737b618a0d6f606c2"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/battis/appmetadata/zipball/a97bdc20627008ed165b638737b618a0d6f606c2",
+                "reference": "a97bdc20627008ed165b638737b618a0d6f606c2",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Battis\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-3.0"
+            ],
+            "authors": [
+                {
+                    "name": "Seth Battis",
+                    "email": "seth@battis.net"
+                }
+            ],
+            "description": "An object to store app metadata backed by a MySQL table",
+            "time": "2015-10-22 20:25:29"
+        },
+        {
+            "name": "battis/simplecache",
+            "version": "v1.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/battis/simplecache.git",
+                "reference": "2116d33def68ebf3d2a2ad4afd2970077115d801"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/battis/simplecache/zipball/2116d33def68ebf3d2a2ad4afd2970077115d801",
+                "reference": "2116d33def68ebf3d2a2ad4afd2970077115d801",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "classmap": [
+                    ""
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "LGPL-3.0"
+            ],
+            "authors": [
+                {
+                    "name": "Seth Battis",
+                    "email": "seth@battis.net"
+                }
+            ],
+            "description": "Manage a simple cache backed by a MySQL database",
+            "time": "2015-10-05 15:13:09"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "dev",
+    "stability-flags": [],
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": []
+}

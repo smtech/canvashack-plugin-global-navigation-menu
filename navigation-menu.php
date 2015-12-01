@@ -2,10 +2,7 @@
 
 header('Content-Type: application/javascript');
 
-require_once(__DIR__ . '/.ignore.custom-prefs-authentication.inc.php');
-require_once(__DIR__ . '/config.inc.php');
-require_once(SMCANVASLIB_PATH . '/include/mysql.inc.php');
-require_once(SMCANVASLIB_PATH . '/include/cache.inc.php');
+require_once('common.inc.php');
 
 if (isset($_REQUEST['user_id'])) {
 	if (is_numeric($_REQUEST['user_id'])) {
@@ -15,7 +12,7 @@ if (isset($_REQUEST['user_id'])) {
 	}
 }
 
-if (!isset($userId) || !strlen($userId)) {
+if (empty($userId)) {
 	exit;
 }
 
@@ -231,52 +228,54 @@ $menuHtml = str_replace('@@LOCATION@@', $_REQUEST['location'], $menuHtml);
 ?>
 /*jslint browser: true, devel: true, eqeq: true, plusplus: true, sloppy: true, todo: true, vars: true, white: true */
 
-// types of user
-// TODO pull this from DB too
-var USER_CLASS_STUDENT = 'student';
-var USER_CLASS_STAFF = 'staff';
-var USER_CLASS_FACULTY = 'faculty';
-var USER_CLASS_NO_MENU = 'no-menu';
-
-// the class of the current user
-var userClass = <?= (strlen($userPrefs['role']) ? "'{$userPrefs['role']}'" : 'USER_CLASS_NO_MENU') ?>;
-
-// courses that (if they exist in Courses) are replicated in the Resources menu
-var coursesToHide = [<?php foreach($coursesToHide as $c) {if($c != $coursesToHide[0]) echo ','; echo "\"{$c}\"";} ?>];
-
-// remove courses from the Courses menu that have been replicated in custom menus
-function stmarks_hideCourses(courses) {
-	var i;
-	var coursesList = document.getElementById('menu_enrollments').children[2].children;
-	for (i = 1; i < coursesList.length; i += 1) {
-		if (courses.indexOf(coursesList[i].getAttribute('data-id')) > -1) {
-			coursesList[i].parentNode.removeChild(coursesList[i]);
-			i = 0; // start at the beginning again... eventually we'll hide them all and escape!
+var global_navigation_menu = {
+	// types of user
+	// FIXME pull this from DB too
+	var USER_CLASS_STUDENT = 'student',
+	var USER_CLASS_STAFF = 'staff',
+	var USER_CLASS_FACULTY = 'faculty',
+	var USER_CLASS_NO_MENU = 'no-menu',
+	
+	// the class of the current user
+	var userClass = <?= (strlen($userPrefs['role']) ? "'{$userPrefs['role']}'" : 'USER_CLASS_NO_MENU') ?>,
+	
+	/* FIXME replace this functionality with favorites via API
+	// courses that (if they exist in Courses) are replicated in the Resources menu
+	var coursesToHide = [<?php foreach($coursesToHide as $c) {if($c != $coursesToHide[0]) echo ','; echo "\"{$c}\"";} ?>];
+	
+	// remove courses from the Courses menu that have been replicated in custom menus
+	function stmarks_hideCourses(courses) {
+		var i;
+		var coursesList = document.getElementById('menu_enrollments').children[2].children;
+		for (i = 1; i < coursesList.length; i += 1) {
+			if (courses.indexOf(coursesList[i].getAttribute('data-id')) > -1) {
+				coursesList[i].parentNode.removeChild(coursesList[i]);
+				i = 0; // start at the beginning again... eventually we'll hide them all and escape!
+			}
+		}
+	} */
+	
+	// parse the array/object structure above into the HTML that represents a dropdown menu and add it to the right of the existing menubar
+	function appendMenu(html) {
+		// TODO make this all pretty and jQuery-like
+		var navigationMenu = document.getElementById("menu");
+		var menu = document.createElement('li');
+		menu.setAttribute('class', 'menu-item');
+		menu.innerHTML = html;
+		navigationMenu.appendChild(menu);
+	}
+	
+	function appendMenus() {
+		// add the custom menu to the menubar
+		// if you wanted to add more menus, define another menu structure like resources and call appendMenu() with it as a parameter (menus would be added in the order that the appendMenu() calls occur)
+		if (userClass != USER_CLASS_NO_MENU) {
+			// append menus
+	<?php
+			foreach ($menuHtml as $m) {
+				echo "\t\tappendMenu('{$m}');\n";
+			} ?>
 		}
 	}
 }
 
-// parse the array/object structure above into the HTML that represents a dropdown menu and add it to the right of the existing menubar
-function stmarks_appendMenu(html) {
-	var navigationMenu = document.getElementById("menu");
-	var menu = document.createElement('li');
-	menu.setAttribute('class', 'menu-item');
-	menu.innerHTML = html;
-	navigationMenu.appendChild(menu);
-}
-
-function stmarks_navigationMenu() {
-	// add the custom menu to the menubar
-	// if you wanted to add more menus, define another menu structure like resources and call appendMenu() with it as a parameter (menus would be added in the order that the appendMenu() calls occur)
-	if (userClass != USER_CLASS_NO_MENU) {
-		// append menus
-<?php
-		foreach ($menuHtml as $m) {
-			echo "\t\tstmarks_appendMenu('{$m}');\n";
-		} ?>
-		
-		// hide courses last, since some userClass identification is based on course enrollments!
-		stmarks_hideCourses(coursesToHide);
-	}
-}
-
+global_navigation_menu.appendMenus();

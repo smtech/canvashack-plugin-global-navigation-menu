@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<canvashack>
+	<name>Global Navigation Menus</name>
+	<id>global-navigation-menus</id>
+	<abstract>Add additional menus to the global navigation in Canvas</abstract>
+	<authors>
+		<author>
+			<name>Seth Battis</name>
+			<email>SethBattis@stmarksschool.org</email>
+		</author>
+	</authors>
+	<components>
+		<javascript path="menu-loader.js" />
+		<canvas>
+			<pages>
+				<include>
+					<page pattern="/.*/" />
+				</include>
+			</pages>
+			<dom>
+				<selector load="loadMenus()">#menu</selector>
+			</dom>
+		</canvas>
+</canvashack>

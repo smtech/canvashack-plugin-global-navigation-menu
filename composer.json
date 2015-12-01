@@ -1,0 +1,17 @@
+{
+    "name": "canvashack/plugin-global-navigation-menu",
+    "description": "Add additional menus to the global navigation in Canvas",
+    "type": "canvashack-plugin",
+    "require": {
+        "battis/simplecache": "~1.0",
+        "battis/appmetadata": "~1.0"
+    },
+    "license": "GPL-3.0",
+    "authors": [
+        {
+            "name": "Seth Battis",
+            "email": "sethbattis@stmarksschool.org"
+        }
+    ],
+    "minimum-stability": "dev"
+}
