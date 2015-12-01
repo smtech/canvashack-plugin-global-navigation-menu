@@ -10,15 +10,16 @@
 		</author>
 	</authors>
 	<components>
-		<javascript path="menu-loader.js" />
+		<javascript path="menu-loader.js"/>
 		<canvas>
 			<pages>
 				<include>
-					<page pattern="/.*/" />
+					<page pattern="/.*/"/>
 				</include>
 			</pages>
 			<dom>
 				<selector load="loadMenus()">#menu</selector>
 			</dom>
 		</canvas>
+	</components>
 </canvashack>
