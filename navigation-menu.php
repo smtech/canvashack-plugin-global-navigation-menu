@@ -64,7 +64,7 @@ function startMenu($menuItem, $columns = 1) {
 		) . nonempty(
 			$menuItem['target'],
 			' target="' . $menuItem['target'] . '"'
-		) . '>' . $menuItem['title'] . '<span class="menu-item-title-icon"/>' . ($columns > 0 ? ' <i class="icon-mini-arrow-down"/>' : '') . '</a><div class="menu-item-drop"><table cellspacing="0"><tr>';
+		) . '>' . $menuItem['title'] . '<span class="menu-item-title-icon"><span/>' . ($columns > 0 ? ' <i class="icon-mini-arrow-down"><i/>' : '') . '</a><div class="menu-item-drop"><table cellspacing="0"><tr>';
 }
 
 function endMenu() {
