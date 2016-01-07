@@ -10,15 +10,22 @@
 		</author>
 	</authors>
 	<components>
-		<javascript path="menu-loader.js"/>
+		<javascript>menu-loader.js</javascript>
 		<canvas>
 			<pages>
 				<include>
-					<page pattern="/.*/"/>
+					<page>
+						<type>regex</type>
+						<pattern>/.*/</pattern>
+					</page>
 				</include>
 			</pages>
 			<dom>
-				<selector load="loadMenus()">#menu</selector>
+				<bundle>
+					<event>load</event>
+					<action>loadMenus()</action>
+					<selector>#menu</selector>
+				</bundle>
 			</dom>
 		</canvas>
 	</components>
