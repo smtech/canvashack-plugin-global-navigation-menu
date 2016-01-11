@@ -1,11 +1,10 @@
 <?php
 
-require_once(__DIR__ . '/config.inc.php');
-require_once(SMCANVASLIB_PATH . '/include/mysql.inc.php');
+require_once('common.inc.php');
 
 if(isset($_REQUEST['item'])) {
 	// FIXME should really enforce roles/groups restrictions (although they are really only cosmetic)
-	$response = mysqlQuery("
+	$response = $customPrefs->query("
 		SELECT *
 			FROM `menu-items`
 			WHERE
@@ -13,8 +12,8 @@ if(isset($_REQUEST['item'])) {
 	");
 	$item = $response->fetch_assoc();
 	$canvasInstance = parse_url($_REQUEST['location'], PHP_URL_HOST);
-	$location = ($item['url'][0] == '/' ? "https://{$canvasInstance}{$item['url']}" : $item['url']);
-	mysqlQuery("
+	$location = ($item['url'][0] == '/' ? "{$_SESSION['canvasInstanceUrl']}{$item['url']}" : $item['url']);
+	$customPrefs->query("
 		INSERT
 			INTO `menu-clicks`
 			(

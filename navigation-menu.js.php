@@ -4,6 +4,8 @@ header('Content-Type: application/javascript');
 
 require_once('common.inc.php');
 
+$cache->pushKey(basename(__FILE__, '.php'));
+
 if (isset($_REQUEST['user_id'])) {
 	if (is_numeric($_REQUEST['user_id'])) {
 		$userId = $_REQUEST['user_id'];
@@ -17,16 +19,17 @@ if (empty($userId)) {
 }
 
 /* get the current user's preferences */
-$response = mysqlQuery("
+$response = $customPrefs->query("
 	SELECT * FROM `users`
 		WHERE
 			`id` = '" . $userId . "'
 ");
 $userPrefs = $response->fetch_assoc();
-$userPrefs['groups'] = unserialize($userPrefs['groups']);
+// FIXME groups are now stored in separate tables
+//$userPrefs['groups'] = unserialize($userPrefs['groups']);
 
 /* build our list of courses that should be removed from the Courses menu */
-$response = mysqlQuery("
+$response = $customPrefs->query("
 	SELECT * FROM `courses`
 		WHERE
 			`menu-visible` = '0'
@@ -56,11 +59,11 @@ function nonempty($flag, $value) {
 }
 
 function startMenu($menuItem, $columns = 1) {
-	global $userPrefs;
+	global $userPrefs, $pluginMetadata;
 	return '<a class="menu-item-title"' .
 		nonempty(
 			$menuItem['url'],
-			' href="' . APP_URL . "/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@" . '"'
+			' href="' . $pluginMetadata['PLUGIN_URL'] . "/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@" . '"'
 		) . nonempty(
 			$menuItem['target'],
 			' target="' . $menuItem['target'] . '"'
@@ -103,7 +106,7 @@ function endSection() {
 }
 
 function menuItem($menuItem) {
-	global $userPrefs;
+	global $userPrefs, $pluginMetadata;
 	return '<li' .
 		nonempty(
 			$menuItem['style'],
@@ -114,7 +117,7 @@ function menuItem($menuItem) {
 			' target="' . $menuItem['target'] . '"'
 		) . nonempty(
 			$menuItem['url'],
-			' href="' . APP_URL . "/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@" . '"'
+			' href="' . $pluginMetadata['PLUGIN_URL'] . "/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@" . '"'
 		) . '><span class="name ellipsis">' . $menuItem['title'] . '</span>' .
 		nonempty(
 			$menuItem['subtitle'],
@@ -122,21 +125,22 @@ function menuItem($menuItem) {
 		) . '</a></li>';
 }
 
-$menuHtml = getCache('user', $userPrefs['id'], 'menus');
+$menuHtml = $cache->getCache($userPrefs['id']);
 if (!$menuHtml) {
 	/* build a set of regexp conditions to find this user's groups in serialized group lists hanging off of menu items */
 	$userGroups = 'FALSE';
-	if (is_array($userPrefs['groups'])) {
+	// FIXME reimpliment groups
+	/*if (is_array($userPrefs['groups'])) {
 		$userGroups == '';
 		foreach($userPrefs['groups'] as $g) {
 			$userGroups = (strlen($userGroups) ? " {$userGroups} OR " : '') . "`groups` REGEXP 'a:[0-9]+\{(i:[0-9]+;i:[0-9]+;)*i:[0-9]+;i:{$g};(i:[0-9]+;i:[0-9]+;)*\}'";
 		}
-	}
+	}*/
 	
 	/* build the menus */
 	// TODO no doubt this could be elegantly wrapped up in a recursive function full of menu-related puns
 	$menuHtml = array();
-	$menus = mysqlQuery("
+	$menus = $customPrefs->query("
 		SELECT *
 			FROM `menu-items`
 			WHERE
@@ -153,7 +157,7 @@ if (!$menuHtml) {
 				`title` ASC
 	");
 	for ($i = 0; $m = $menus->fetch_assoc(); $i++) {
-		$columns = mysqlQuery("
+		$columns = $customPrefs->query("
 			SELECT *
 				FROM `menu-items`
 				WHERE
@@ -173,7 +177,7 @@ if (!$menuHtml) {
 		$menuHtml[$i] = startMenu($m, $columns->num_rows);
 		while ($c = $columns->fetch_assoc()) {
 			$menuHtml[$i] .= startColumn($c);
-			$sections = mysqlQuery("
+			$sections = $customPrefs->query("
 				SELECT *
 					FROM `menu-items`
 					WHERE
@@ -193,7 +197,7 @@ if (!$menuHtml) {
 			");
 			while ($s = $sections->fetch_assoc()) {
 				$menuHtml[$i] .= startSection($s);
-				$items = mysqlQuery("
+				$items = $customPrefs->query("
 					SELECT *
 						FROM `menu-items`
 						WHERE
@@ -220,62 +224,34 @@ if (!$menuHtml) {
 		}
 		$menuHtml[$i] .= endMenu();
 	}
-	setCache('user', $userPrefs['id'], 'menus', $menuHtml);
+	$cache->setCache($userPrefs['id'], $menuHtml);
 }
 
 $menuHtml = str_replace('@@LOCATION@@', $_REQUEST['location'], $menuHtml);
 
 ?>
-/*jslint browser: true, devel: true, eqeq: true, plusplus: true, sloppy: true, todo: true, vars: true, white: true */
-
 var global_navigation_menu = {
 	// types of user
 	// FIXME pull this from DB too
-	var USER_CLASS_STUDENT = 'student',
-	var USER_CLASS_STAFF = 'staff',
-	var USER_CLASS_FACULTY = 'faculty',
-	var USER_CLASS_NO_MENU = 'no-menu',
+	USER_CLASS_STUDENT: 'student',
+	USER_CLASS_STAFF: 'staff',
+	USER_CLASS_FACULTY: 'faculty',
+	USER_CLASS_NO_MENU: 'no-menu',
 	
 	// the class of the current user
-	var userClass = <?= (strlen($userPrefs['role']) ? "'{$userPrefs['role']}'" : 'USER_CLASS_NO_MENU') ?>,
-	
-	/* FIXME replace this functionality with favorites via API
-	// courses that (if they exist in Courses) are replicated in the Resources menu
-	var coursesToHide = [<?php foreach($coursesToHide as $c) {if($c != $coursesToHide[0]) echo ','; echo "\"{$c}\"";} ?>];
-	
-	// remove courses from the Courses menu that have been replicated in custom menus
-	function stmarks_hideCourses(courses) {
-		var i;
-		var coursesList = document.getElementById('menu_enrollments').children[2].children;
-		for (i = 1; i < coursesList.length; i += 1) {
-			if (courses.indexOf(coursesList[i].getAttribute('data-id')) > -1) {
-				coursesList[i].parentNode.removeChild(coursesList[i]);
-				i = 0; // start at the beginning again... eventually we'll hide them all and escape!
-			}
-		}
-	} */
-	
-	// parse the array/object structure above into the HTML that represents a dropdown menu and add it to the right of the existing menubar
-	function appendMenu(html) {
-		// TODO make this all pretty and jQuery-like
-		var navigationMenu = document.getElementById("menu");
-		var menu = document.createElement('li');
-		menu.setAttribute('class', 'menu-item');
-		menu.innerHTML = html;
-		navigationMenu.appendChild(menu);
-	}
-	
-	function appendMenus() {
+	userClass: <?= (strlen($userPrefs['role']) ? "'{$userPrefs['role']}'" : 'USER_CLASS_NO_MENU') ?>,
+			
+	appendMenus: function() {
 		// add the custom menu to the menubar
 		// if you wanted to add more menus, define another menu structure like resources and call appendMenu() with it as a parameter (menus would be added in the order that the appendMenu() calls occur)
-		if (userClass != USER_CLASS_NO_MENU) {
+		if (this.userClass != this.USER_CLASS_NO_MENU) {
 			// append menus
-	<?php
-			foreach ($menuHtml as $m) {
-				echo "\t\tappendMenu('{$m}');\n";
+<?php
+			foreach ($menuHtml as $html) {
+				echo "\t\t\t$('#menu').append('<li class=\"menu-item\">{$html}</li>');\n";
 			} ?>
 		}
 	}
-}
+};
 
 global_navigation_menu.appendMenus();
