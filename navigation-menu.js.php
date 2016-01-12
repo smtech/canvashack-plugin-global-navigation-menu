@@ -227,7 +227,7 @@ if (!$menuHtml) {
 	$cache->setCache($userPrefs['id'], $menuHtml);
 }
 
-$menuHtml = str_replace('@@LOCATION@@', $_REQUEST['location'], $menuHtml);
+$menuHtml = str_replace('@@LOCATION@@', $_SERVER['HTTP_REFERER'], $menuHtml);
 
 ?>
 var global_navigation_menu = {
