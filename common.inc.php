@@ -8,7 +8,8 @@ if (file_exists('manifest.xml')) {
 
 $pluginMetadata = new Battis\AppMetadata($sql, (string) $manifest->id);
 
-// $customPrefs = mysqli_connect( DON'T EVER COMMIT YOUR CREDENTIALS! );
+// FIXME le sigh… a more elegant password management scheme is needed here (save to config database, etc.)
+$customPrefs = mysqli_connect($secrets->mysql->customprefs->host, $secrets->mysql->customprefs->username, $secrets->mysql->customprefs->password, $secrets->mysql->customprefs->database);
 
 $cache = new Battis\HierarchicalSimpleCache($sql, basename(__DIR__));
 
