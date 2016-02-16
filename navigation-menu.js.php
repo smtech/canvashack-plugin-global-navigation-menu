@@ -60,14 +60,14 @@ function nonempty($flag, $value) {
 
 function startMenu($menuItem, $columns = 1) {
 	global $userPrefs, $pluginMetadata;
-	return '<a class="menu-item-title"' .
+	return '<a class="menu-item-' . ($columns > 0 ? 'title"' : 'no-drop') .
 		nonempty(
 			$menuItem['url'],
 			' href="' . $pluginMetadata['PLUGIN_URL'] . "/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@" . '"'
 		) . nonempty(
 			$menuItem['target'],
 			' target="' . $menuItem['target'] . '"'
-		) . '>' . $menuItem['title'] . '<span class="menu-item-title-icon"><span/>' . ($columns > 0 ? ' <i class="icon-mini-arrow-down"><i/>' : '') . '</a><div class="menu-item-drop"><table cellspacing="0"><tr>';
+		) . '>' . $menuItem['title'] . '<span class="menu-item-title-icon"><span/>' . ($columns > 0 ? ' <i class="icon-mini-arrow-down"><i/></a><div class="menu-item-drop"><table cellspacing="0"><tr>' : '');
 }
 
 function endMenu() {
@@ -222,7 +222,9 @@ if (!$menuHtml) {
 			}
 			$menuHtml[$i] .= endColumn();
 		}
-		$menuHtml[$i] .= endMenu();
+		if ($columns->num_rows > 0) {
+			$menuHtml[$i] .= endMenu();
+		}
 	}
 	$cache->setCache($userPrefs['id'], $menuHtml);
 }
@@ -248,7 +250,7 @@ var global_navigation_menu = {
 			// append menus
 <?php
 			foreach ($menuHtml as $html) {
-				echo "\t\t\t$('#menu').append('<li class=\"menu-item\">{$html}</li>');\n";
+				echo "\t\t\t$('#menu').append('<li class=\"menu-item canvashack_global-navigation-menu\">{$html}</li>');\n";
 			} ?>
 		}
 	}
