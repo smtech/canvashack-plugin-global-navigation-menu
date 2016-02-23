@@ -1,11 +1,34 @@
+/* prepare the whole menu for specific position via JavaScript */
 #canvashack-global-navigation-menu {
 	position: absolute;
 }
 
-#canvashack-global-navigation-menu .ui-menu-item {
+/* top-level menu items are laid out horizontally as a menubar */
+#canvashack-global-navigation-menu > .ui-menu-item {
     display: inline-block;
     float: left;
     clear:none;
     position: relative;
     width: auto !important;
+}
+
+/* make menu items push out the width of the drop-downs to fit */
+#canvashack-global-navigation-menu .ui-menu-item a {
+	white-space: nowrap;
+}
+
+/* style section titles */
+#canvashack-global-navigation-menu .section-title {
+	color: #999;
+	text-decoration: none;
+	font-size: smaller;
+	font-style: italic;
+	margin: 0;
+	padding-bottom: 0;
+}
+
+/* disable "selection" of section titles */
+#canvashack-global-navigation-menu .section-title:hover {
+	background: transparent;
+	border: none;
 }

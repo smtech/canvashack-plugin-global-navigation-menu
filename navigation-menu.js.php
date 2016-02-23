@@ -61,7 +61,7 @@ function nonempty($flag, $value) {
 function startMenu($menuItem, $columns = 1) {
 	global $userPrefs, $pluginMetadata;
 	
-	return '<li><a' . nonempty($menuItem['target'], " target=\"{$menuItem['target']}\"") . ' href="' . (empty($menuItem['url']) ? '#' : $menuItem['url']) . '"' . (empty($menuItem['url']) ? ' class="noclick"' : '') . '>' . $menuItem['title'] . '</a><ul>';
+	return '<li><a' . nonempty($menuItem['target'], " target=\"{$menuItem['target']}\"") . ' href="' . (empty($menuItem['url']) ? '#' : $menuItem['url']) . '" class="menubar-item' . (empty($menuItem['url']) ? ' noclick' : '') . '">' . $menuItem['title'] . '</a><ul>';
 }
 
 function endMenu() {
@@ -77,7 +77,7 @@ function endColumn() {
 }
 
 function startSection($menuItem) {
-	return nonempty($menuItem['title'], "<li><a href=\"#\" class=\"noclick\"><strong>{$menuItem['title']}</strong></a></li>");
+	return nonempty($menuItem['title'], "<li><a href=\"#\" class=\"section-title noclick\"><strong>{$menuItem['title']}</strong></a></li>");
 }
 
 function endSection() {
