@@ -61,7 +61,8 @@ function nonempty($flag, $value) {
 function startMenu($menuItem, $columns = 1) {
 	global $userPrefs, $pluginMetadata;
 	
-	return '<li><a' . nonempty($menuItem['target'], " target=\"{$menuItem['target']}\"") . ' href="' . (empty($menuItem['url']) ? '#' : $menuItem['url']) . '" class="menubar-item' . (empty($menuItem['url']) ? ' noclick' : '') . '">' . $menuItem['title'] . '</a><ul>';
+	// TODO it would be better NOT to start a list that I don't mean to populate (i.e. if the menu has no subitems)
+	return '<li class="menubar-item"><a' . nonempty($menuItem['target'], " target=\"{$menuItem['target']}\"") . ' href="' . (empty($menuItem['url']) ? '#' : $pluginMetadata['PLUGIN_URL'] . "/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@") . '">' . $menuItem['title'] . '</a><ul>';
 }
 
 function endMenu() {
@@ -86,7 +87,7 @@ function endSection() {
 
 function menuItem($menuItem) {
 	global $userPrefs, $pluginMetadata;
-	return '<li><a' . nonempty($menuItem['target'], " target=\"{$menuItem['target']}\"") . " href=\"{$menuItem['url']}\">{$menuItem['title']}</a></li>";
+	return '<li><a' . nonempty($menuItem['target'], " target=\"{$menuItem['target']}\"") . " href=\"{$pluginMetadata['PLUGIN_URL']}/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@\">{$menuItem['title']}</a></li>";
 }
 
 $menuHtml = $cache->getCache($userPrefs['id']);
@@ -217,10 +218,17 @@ var global_navigation_menu = {
 			foreach ($menuHtml as $html) {
 				echo "$('#canvashack-global-navigation-menu').append('$html');";
 			} ?>
-			$('#canvashack-global-navigation-menu').menu({position: {at: 'left bottom'}});
+			/* clean out empty drop-downs -- see TODO in startMenu() */
+			$('#canvashack-global-navigation-menu ul:empty').remove();
+			
+			$('#canvashack-global-navigation-menu').menu({position: {at: 'left bottom'}, icons: { submenu: "ui-icon-triangle-1-s" }});
+			
+			/* position add-on menu next to existing global navigation items */
 			$('#canvashack-global-navigation-menu').css('top', $('#menu').children().last().position().top);
 			$('#canvashack-global-navigation-menu').css('left', $('#menu').children().last().position().left + $('#menu').children().last().width());
-			$('#canvashack-global-navigation-menu .noclick').click(function(e) { e.preventDefault(); });
+			
+			/* disable clicks on "noclick" menu items */
+			$('#canvashack-global-navigation-menu .noclick').addClass('ui-state-disabled').off('click');
 		}
 	}
 };
