@@ -11,6 +11,7 @@
 	</authors>
 	<components>
 		<javascript>menu-loader.js</javascript>
+		<css>navbar.css</css>
 		<canvas>
 			<pages>
 				<include>

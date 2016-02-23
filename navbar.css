@@ -1,0 +1,11 @@
+#canvashack-global-navigation-menu {
+	position: absolute;
+}
+
+#canvashack-global-navigation-menu .ui-menu-item {
+    display: inline-block;
+    float: left;
+    clear:none;
+    position: relative;
+    width: auto !important;
+}

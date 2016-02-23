@@ -60,69 +60,33 @@ function nonempty($flag, $value) {
 
 function startMenu($menuItem, $columns = 1) {
 	global $userPrefs, $pluginMetadata;
-	return '<a class="menu-item-' . ($columns > 0 ? 'title"' : 'no-drop') .
-		nonempty(
-			$menuItem['url'],
-			' href="' . $pluginMetadata['PLUGIN_URL'] . "/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@" . '"'
-		) . nonempty(
-			$menuItem['target'],
-			' target="' . $menuItem['target'] . '"'
-		) . '>' . $menuItem['title'] . '<span class="menu-item-title-icon"><span/>' . ($columns > 0 ? ' <i class="icon-mini-arrow-down"><i/></a><div class="menu-item-drop"><table cellspacing="0"><tr>' : '');
+	
+	return '<li><a' . nonempty($menuItem['target'], " target=\"{$menuItem['target']}\"") . ' href="' . (empty($menuItem['url']) ? '#' : $menuItem['url']) . '"' . (empty($menuItem['url']) ? ' class="noclick"' : '') . '>' . $menuItem['title'] . '</a><ul>';
 }
 
 function endMenu() {
-	return '</tr></table></div>';
+	return '</ul></li>';
 }
 
 function startColumn($menuItem) {
-	return '<td class="menu-item-drop-column"' .
-		nonempty(
-			$menuItem['style'],
-			' style="' . $menuItem['style'] . '"'
-		) . '>';
+	return '';
 }
 
 function endColumn() {
-	return '</td>';
+	return '';
 }
 
 function startSection($menuItem) {
-	return nonempty(
-		$menuItem['title'],
-		'<span class="menu-item-heading"' .
-			nonempty(
-				$menuItem['style'],
-				' style="' . $menuItem['style'] . '"'
-			) . '>' . $menuItem['title'] . '</span>'
-		) . '<ul class="menu-item-drop-column-list"' . 
-		nonempty(
-			$menuItem['style'],
-			' style="' . $menuItem['style'] . '"'
-		) . '>';
+	return nonempty($menuItem['title'], "<li><a href=\"#\" class=\"noclick\"><strong>{$menuItem['title']}</strong></a></li>");
 }
 
 function endSection() {
-	return '</ul>';
+	return '';
 }
 
 function menuItem($menuItem) {
 	global $userPrefs, $pluginMetadata;
-	return '<li' .
-		nonempty(
-			$menuItem['style'],
-			' style="' . $menuItem['style'] . '"'
-		) . '><a' . 
-		nonempty(
-			$menuItem['target'],
-			' target="' . $menuItem['target'] . '"'
-		) . nonempty(
-			$menuItem['url'],
-			' href="' . $pluginMetadata['PLUGIN_URL'] . "/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@" . '"'
-		) . '><span class="name ellipsis">' . $menuItem['title'] . '</span>' .
-		nonempty(
-			$menuItem['subtitle'],
-			'<span class="subtitle">' . $menuItem['subtitle'] . '</span>'
-		) . '</a></li>';
+	return '<li><a' . nonempty($menuItem['target'], " target=\"{$menuItem['target']}\"") . " href=\"{$menuItem['url']}\">{$menuItem['title']}</a></li>";
 }
 
 $menuHtml = $cache->getCache($userPrefs['id']);
@@ -222,9 +186,9 @@ if (!$menuHtml) {
 			}
 			$menuHtml[$i] .= endColumn();
 		}
-		if ($columns->num_rows > 0) {
+		//if ($columns->num_rows > 0) {
 			$menuHtml[$i] .= endMenu();
-		}
+		//}
 	}
 	$cache->setCache($userPrefs['id'], $menuHtml);
 }
@@ -248,10 +212,15 @@ var global_navigation_menu = {
 		// if you wanted to add more menus, define another menu structure like resources and call appendMenu() with it as a parameter (menus would be added in the order that the appendMenu() calls occur)
 		if (this.userClass != this.USER_CLASS_NO_MENU) {
 			// append menus
+			$('#menu').after('<ul id="canvashack-global-navigation-menu"></ul>');
 <?php
 			foreach ($menuHtml as $html) {
-				echo "\t\t\t$('#menu').append('<li class=\"menu-item canvashack_global-navigation-menu\">{$html}</li>');\n";
+				echo "$('#canvashack-global-navigation-menu').append('$html');";
 			} ?>
+			$('#canvashack-global-navigation-menu').menu({position: {at: 'left bottom'}});
+			$('#canvashack-global-navigation-menu').css('top', $('#menu').children().last().position().top);
+			$('#canvashack-global-navigation-menu').css('left', $('#menu').children().last().position().left + $('#menu').children().last().width());
+			$('#canvashack-global-navigation-menu .noclick').click(function(e) { e.preventDefault(); });
 		}
 	}
 };
