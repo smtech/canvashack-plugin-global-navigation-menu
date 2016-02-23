@@ -58,36 +58,35 @@ function nonempty($flag, $value) {
 	return (strlen($flag) ? $value : '');
 }
 
-function startMenu($menuItem, $columns = 1) {
+function startMenu($html, $menuItem, $columns = 1) {
 	global $userPrefs, $pluginMetadata;
 	
-	// TODO it would be better NOT to start a list that I don't mean to populate (i.e. if the menu has no subitems)
-	return '<li class="menubar-item"><a' . nonempty($menuItem['target'], " target=\"{$menuItem['target']}\"") . ' href="' . (empty($menuItem['url']) ? '#' : $pluginMetadata['PLUGIN_URL'] . "/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@") . '">' . $menuItem['title'] . '</a><ul>';
+	return $html . '<li class="menubar-item"><a' . nonempty($menuItem['target'], " target=\"{$menuItem['target']}\"") . ' href="' . (empty($menuItem['url']) ? '#' : $pluginMetadata['PLUGIN_URL'] . "/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@") . '">' . $menuItem['title'] . '</a>';
 }
 
-function endMenu() {
-	return '</ul></li>';
+function endMenu($html) {
+	return $html . (preg_match('%</li>$%', $html) ? '</ul>' : '') . '</li>';
 }
 
-function startColumn($menuItem) {
-	return '';
+function startColumn($html, $menuItem) {
+	return $html . (preg_match('%<!-- column ends -->$%', $html) ? '' : '<ul>') . "<!-- column {$menuItem['column']} begins -->";
 }
 
-function endColumn() {
-	return '';
+function endColumn($html) {
+	return $html . '<!-- column ends -->';
 }
 
-function startSection($menuItem) {
-	return nonempty($menuItem['title'], "<li><a href=\"#\" class=\"section-title noclick\"><strong>{$menuItem['title']}</strong></a></li>");
+function startSection($html, $menuItem) {
+	return $html . nonempty($menuItem['title'], "<li><a href=\"#\" class=\"section-title noclick\"><strong>{$menuItem['title']}</strong></a></li>");
 }
 
-function endSection() {
-	return '';
+function endSection($html) {
+	return $html;
 }
 
-function menuItem($menuItem) {
+function menuItem($html, $menuItem) {
 	global $userPrefs, $pluginMetadata;
-	return '<li><a' . nonempty($menuItem['target'], " target=\"{$menuItem['target']}\"") . " href=\"{$pluginMetadata['PLUGIN_URL']}/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@\">{$menuItem['title']}</a></li>";
+	return $html .  "<li><a" . nonempty($menuItem['target'], " target=\"{$menuItem['target']}\"") . " href=\"{$pluginMetadata['PLUGIN_URL']}/click.php?item={$menuItem['id']}&user_id={$userPrefs['id']}&location=@@LOCATION@@\">{$menuItem['title']}</a></li>";
 }
 
 $menuHtml = $cache->getCache($userPrefs['id']);
@@ -139,9 +138,9 @@ if (!$menuHtml) {
 					`order` ASC,
 					`title` ASC
 		");
-		$menuHtml[$i] = startMenu($m, $columns->num_rows);
+		$html = startMenu('', $m, $columns->num_rows);
 		while ($c = $columns->fetch_assoc()) {
-			$menuHtml[$i] .= startColumn($c);
+			$html = startColumn($html, $c);
 			$sections = $customPrefs->query("
 				SELECT *
 					FROM `menu-items`
@@ -161,7 +160,7 @@ if (!$menuHtml) {
 						`title` ASC
 			");
 			while ($s = $sections->fetch_assoc()) {
-				$menuHtml[$i] .= startSection($s);
+				$html = startSection($html, $s);
 				$items = $customPrefs->query("
 					SELECT *
 						FROM `menu-items`
@@ -181,15 +180,13 @@ if (!$menuHtml) {
 							`title` ASC
 				");
 				while ($item = $items->fetch_assoc()) {
-					$menuHtml[$i] .= menuItem($item);
+					$html = menuItem($html, $item);
 				}
-				$menuHtml[$i] .= endSection();
+				$html = endSection($html);
 			}
-			$menuHtml[$i] .= endColumn();
+			$html = endColumn($html);
 		}
-		//if ($columns->num_rows > 0) {
-			$menuHtml[$i] .= endMenu();
-		//}
+		$menuHtml[$i] = endMenu($html);
 	}
 	$cache->setCache($userPrefs['id'], $menuHtml);
 }
@@ -218,9 +215,8 @@ var global_navigation_menu = {
 			foreach ($menuHtml as $html) {
 				echo "$('#canvashack-global-navigation-menu').append('$html');";
 			} ?>
-			/* clean out empty drop-downs -- see TODO in startMenu() */
-			$('#canvashack-global-navigation-menu ul:empty').remove();
-			
+
+			/* initialize JQuery menu */			
 			$('#canvashack-global-navigation-menu').menu({position: {at: 'left bottom'}, icons: { submenu: "ui-icon-triangle-1-s" }});
 			
 			/* position add-on menu next to existing global navigation items */
