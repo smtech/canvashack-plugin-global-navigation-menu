@@ -10,7 +10,7 @@
 		</author>
 	</authors>
 	<components>
-		<javascript>menu-loader.js</javascript>
+		<javascript>menu-loader.js.php</javascript>
 		<css>navbar.css</css>
 		<canvas>
 			<pages>
