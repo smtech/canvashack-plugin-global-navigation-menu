@@ -1,13 +1,13 @@
 # ************************************************************
 # Sequel Pro SQL dump
-# Version 4096
+# Version 4541
 #
 # http://www.sequelpro.com/
-# http://code.google.com/p/sequel-pro/
+# https://github.com/sequelpro/sequelpro
 #
-# Host: 127.0.0.1 (MySQL 5.5.38-0ubuntu0.12.04.1)
+# Host: 127.0.0.1 (MySQL 5.5.49-0ubuntu0.14.04.1)
 # Database: canvas-custom-prefs
-# Generation Time: 2014-09-02 03:06:17 +0000
+# Generation Time: 2016-06-10 12:17:47 +0000
 # ************************************************************
 
 
@@ -31,19 +31,36 @@ CREATE TABLE `courses` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-LOCK TABLES `courses` WRITE;
-/*!40000 ALTER TABLE `courses` DISABLE KEYS */;
 
-INSERT INTO `courses` (`id`, `menu-visible`, `calendar-visible`, `calendar-name`)
-VALUES
-	(97,0,1,'Faculty'),
-	(489,0,0,NULL),
-	(497,0,1,NULL),
-	(1277,0,1,NULL),
-	(2056,0,0,NULL);
 
-/*!40000 ALTER TABLE `courses` ENABLE KEYS */;
-UNLOCK TABLES;
+# Dump of table enrollment-rules
+# ------------------------------------------------------------
+
+CREATE TABLE `enrollment-rules` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `role` enum('faculty','staff','student','advisor','no-menu','alum','departed') DEFAULT NULL COMMENT 'Custom Prefs role affected by this enrollment rule (optional, but _one_ of either role or group must be included to have any effect)',
+  `group` int(11) DEFAULT NULL COMMENT 'Database ID of group affected by this rule (optional, but either a group or role must be provided for the rule to have an effect)',
+  `course` int(11) NOT NULL COMMENT 'Canvas ID of the course in which the rule mandates enrollment',
+  `enrollment` varchar(64) NOT NULL DEFAULT 'StudentEnrollment' COMMENT 'Enrollment role mandated by the rule (default is Student)',
+  `modified` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Timestamp of last modification of this rule',
+  `title` varchar(255) DEFAULT NULL COMMENT 'Human-readable title for this rule',
+  `description` text COMMENT 'Human-readable complete description of this rule',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+
+
+# Dump of table group-memberships
+# ------------------------------------------------------------
+
+CREATE TABLE `group-memberships` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `user` int(11) NOT NULL COMMENT 'Database ID of user that is a member of this group',
+  `group` int(11) NOT NULL COMMENT 'Database ID of the group of which the user is a member',
+  `modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Timestamp of last modification of this membership',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
 
 
 # Dump of table groups
@@ -52,39 +69,20 @@ UNLOCK TABLES;
 CREATE TABLE `groups` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` text COMMENT 'Human-readable name of this group',
-  `parent` int(11) DEFAULT NULL,
+  `parent` int(11) DEFAULT NULL COMMENT 'Database ID of the parent group of this group',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-LOCK TABLES `groups` WRITE;
-/*!40000 ALTER TABLE `groups` DISABLE KEYS */;
-
-INSERT INTO `groups` (`id`, `name`, `parent`)
-VALUES
-	(1,'Arts Department',NULL),
-	(2,'Classics Department',NULL),
-	(3,'English Department',NULL),
-	(4,'History and Social Sciences Department',NULL),
-	(5,'Mathematics Department',11),
-	(6,'Modern Languages Department',NULL),
-	(7,'Psychology Department',NULL),
-	(8,'Religion Department',NULL),
-	(9,'Science Department',11),
-	(11,'STEM',NULL),
-	(12,'Academic Technology',NULL);
-
-/*!40000 ALTER TABLE `groups` ENABLE KEYS */;
-UNLOCK TABLES;
 
 
-# Dump of table menu-caches
+# Dump of table menu-acl
 # ------------------------------------------------------------
 
-CREATE TABLE `menu-caches` (
-  `user` int(11) unsigned NOT NULL,
-  `menus` text NOT NULL,
-  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`user`)
+CREATE TABLE `menu-acl` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `group` int(11) NOT NULL COMMENT 'Database ID of a group that has access to this menu or menu item',
+  `menu-item` int(11) DEFAULT NULL COMMENT 'Database ID of the menu or menu item for which access is provided',
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 
@@ -94,10 +92,10 @@ CREATE TABLE `menu-caches` (
 
 CREATE TABLE `menu-clicks` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `user` int(11) NOT NULL,
-  `source` text NOT NULL,
-  `destination` text NOT NULL,
-  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `user` int(11) NOT NULL COMMENT 'The Canvas ID of the user that clicked on this URL',
+  `source` text NOT NULL COMMENT 'The source page where the link was clicked',
+  `destination` text NOT NULL COMMENT 'The URL of the destination of the click',
+  `timestamp` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'When the click happened',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
@@ -107,71 +105,19 @@ CREATE TABLE `menu-clicks` (
 # ------------------------------------------------------------
 
 CREATE TABLE `menu-items` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `menu` int(11) DEFAULT NULL,
-  `column` int(11) DEFAULT NULL,
-  `section` int(11) DEFAULT NULL,
-  `order` int(11) NOT NULL DEFAULT '0',
-  `title` varchar(100) DEFAULT NULL,
-  `subtitle` varchar(100) DEFAULT NULL,
-  `style` text,
-  `target` text,
-  `url` text,
-  `groups` text,
-  `role` enum('faculty','staff','student','no-menu') DEFAULT NULL,
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Database ID, used by cick.php for redirection and click-tracking',
+  `parent` int(11) DEFAULT NULL COMMENT 'NULL for menus, the Database ID of the menu for menu items',
+  `order` int(11) NOT NULL DEFAULT '0' COMMENT 'Order of menus or menu items within a menu (menus or menu items with equal order will be displayed alphabetically by title)',
+  `title` varchar(100) DEFAULT NULL COMMENT 'Display title of the menu or menu item',
+  `subtitle` varchar(100) DEFAULT NULL COMMENT 'Optional subtitle for menu items',
+  `svg` text COMMENT 'SVG icon for menus (set no fill color: the SVG will be styled by the Canvas theme)',
+  `target` text COMMENT 'HREF target for menu or menu item URL',
+  `url` text COMMENT 'HREF for menu or menu item (menus with a non-anchor HREF will not open -- they will immediately redirect to the URL)',
+  `role` enum('faculty','staff','student','no-menu') DEFAULT NULL COMMENT 'Make this menu or menu item available only for a specific Custom Prefs role (NULL to make available to all users)',
+  `info` text COMMENT 'Informational text to display at the bottom of menu trays',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-LOCK TABLES `menu-items` WRITE;
-/*!40000 ALTER TABLE `menu-items` DISABLE KEYS */;
-
-INSERT INTO `menu-items` (`id`, `menu`, `column`, `section`, `order`, `title`, `subtitle`, `style`, `target`, `url`, `groups`, `role`)
-VALUES
-	(1,NULL,NULL,NULL,1,'Resources',NULL,NULL,NULL,NULL,NULL,NULL),
-	(2,1,41,NULL,1,'General',NULL,NULL,NULL,NULL,NULL,'faculty'),
-	(3,1,41,NULL,2,'The Center for Innovation<br />in Teaching and Learning',NULL,NULL,NULL,NULL,NULL,NULL),
-	(4,1,41,NULL,3,'Research &amp; Writing',NULL,NULL,NULL,NULL,NULL,NULL),
-	(5,1,41,NULL,4,'On Campus',NULL,NULL,NULL,NULL,NULL,NULL),
-	(6,1,41,2,1,'Faculty Resources','Calendars, Forms, Policies, Guides',NULL,NULL,'/courses/97',NULL,NULL),
-	(7,1,41,2,2,'Academic Technology','Shared files',NULL,'_blank','https://drive.google.com/a/stmarksschool.org/?tab=co#folders/0Bx1atGpuKjk9UHJ3MU5nRms5Zms','a:1:{i:0;i:12;}',NULL),
-	(8,1,41,2,2,'History Dept.','Shared files',NULL,'_blank','https://drive.google.com/a/stmarksschool.org/?tab=mo#folders/0Bxkl1PbtN3mKa1B0Ym5nSXoxU2M','a:1:{i:0;i:4;}',NULL),
-	(9,1,41,2,2,'Modern Languages Dept.',NULL,NULL,NULL,'/courses/1294','a:1:{i:0;i:6;}',NULL),
-	(10,1,41,3,1,'Information for Students','Student Enrichment &amp; Academic Support',NULL,NULL,'/courses/491',NULL,NULL),
-	(11,1,41,3,2,'Information for Faculty','Professional Development &amp; Academic Support',NULL,NULL,'/courses/97/wiki/the-center-for-innovation-in-teaching-and-learning',NULL,'faculty'),
-	(12,1,41,3,3,'Writing Lab',NULL,NULL,NULL,'/courses/491/wiki/writing-lab',NULL,NULL),
-	(13,1,41,3,4,'Mathematics Lab',NULL,NULL,NULL,'/courses/491/wiki/mathematics-lab',NULL,NULL),
-	(14,1,41,4,1,'Library','Catalog, Online Resources, References',NULL,'_blank','http://library.stmarksschool.org',NULL,NULL),
-	(15,1,41,4,2,'Writing Manual','All the steps you need to write',NULL,'_blank','https://drive.google.com/a/stmarksschool.org/folderview?id=0ByGbqFAT3Vy1aXdRY2hoNlY4WjA&usp=sharing',NULL,NULL),
-	(16,1,41,5,1,'All School Information','Information, Organizations, Calendar',NULL,NULL,'/courses/2056',NULL,NULL),
-	(17,1,41,5,2,'Weekend Activities Sign-ups',NULL,NULL,'_blank','http://www2.stmarksschool.org',NULL,'student'),
-	(18,1,41,5,3,'Weekend Permission Sign-out',NULL,NULL,'_blank','https://docs.google.com/a/stmarksschool.org/forms/d/11ImFsy_-gz17MHnulm3gQMykarsKFJavR5HESomlkaY/viewform?usp=send_form',NULL,'student'),
-	(19,1,41,5,4,'FLIK Menu',NULL,NULL,'_blank','http://www.myschooldining.com/SMS/?cmd=menus',NULL,NULL),
-	(20,1,41,5,5,'Athletics',NULL,NULL,'_blank','http://www.stmarksschool.org/athletics/teamlisting.aspx',NULL,NULL),
-	(21,NULL,NULL,NULL,2,'Lion Hub',NULL,NULL,NULL,NULL,NULL,NULL),
-	(22,21,42,NULL,1,'Training &amp; Support',NULL,NULL,NULL,NULL,NULL,NULL),
-	(23,21,42,NULL,2,'Communication &amp; Storage',NULL,NULL,NULL,NULL,NULL,NULL),
-	(24,21,42,NULL,3,'Academics Office',NULL,NULL,NULL,NULL,NULL,NULL),
-	(25,21,42,NULL,4,'Service Desks',NULL,NULL,NULL,NULL,NULL,'faculty'),
-	(26,21,42,22,1,'Canvas Training',NULL,NULL,NULL,'/courses/489',NULL,'faculty'),
-	(27,21,42,22,2,'Lynda.com','Software Training &amp; Tutorials',NULL,'_blank','http://iplogin.lynda.com',NULL,NULL),
-	(28,21,42,22,3,'SMS',NULL,NULL,'_blank','http://sms.stmarksschool.org',NULL,NULL),
-	(29,21,42,22,4,'Tech Support Documents',NULL,NULL,'_blank','http://www.stmarksschool.org/academics/technology/Tech-Docs/index.aspx',NULL,'faculty'),
-	(30,21,42,23,1,'Gmail',NULL,NULL,'_blank','https://mail.google.com/a/stmarksschool.org',NULL,NULL),
-	(31,21,42,23,2,'Google Drive',NULL,NULL,'_blank','https://drive.google.com/a/stmarksschool.org/#my-drive',NULL,NULL),
-	(32,21,42,23,3,'Minerva Web Access',NULL,NULL,'_blank','http://minerva.stmarksschool.org',NULL,'faculty'),
-	(33,21,42,23,4,'Athena Web Access',NULL,NULL,'_blank','http://athena.stmarksschool.org',NULL,'faculty'),
-	(34,21,42,23,4,'Athena Web Access',NULL,NULL,'_blank','http://athena.stmarksschool.org',NULL,'student'),
-	(35,21,42,24,1,'CurricuPlan',NULL,NULL,'_blank','http://hosting.curricuplan.com/ms/customers/St%20Marks/cup/curricuplan.nsf',NULL,'faculty'),
-	(36,21,42,24,2,'FAWeb','Window Grades &amp; Comments',NULL,'_blank','http://faweb.stmarksschool.org',NULL,'faculty'),
-	(37,21,42,24,3,'NetClassroom','Course Registration',NULL,'_blank','http://netclassroom.stmarksschool.org',NULL,NULL),
-	(38,21,42,25,1,'Technology Help Desk',NULL,NULL,'_blank','https://stmarks.zendesk.com/requests?output_type=table',NULL,NULL),
-	(39,21,42,25,2,'School Dude',NULL,NULL,'_blank','http://www.myschoolbuilding.com/myschoolbuilding/msbdefault_email.asp?frompage=myrequest.asp',NULL,'faculty'),
-	(40,21,42,25,3,'Communications Request',NULL,NULL,'_blank','http://www.stmarksschool.org/about-st-marks/communications-department/index.aspx',NULL,NULL),
-	(41,1,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL),
-	(42,21,NULL,NULL,0,NULL,NULL,NULL,NULL,NULL,NULL,NULL);
-
-/*!40000 ALTER TABLE `menu-items` ENABLE KEYS */;
-UNLOCK TABLES;
 
 
 # Dump of table users
@@ -179,20 +125,11 @@ UNLOCK TABLES;
 
 CREATE TABLE `users` (
   `id` int(11) unsigned NOT NULL COMMENT 'Canvas user ID',
-  `role` enum('faculty','staff','student','no-menu') NOT NULL DEFAULT 'no-menu' COMMENT 'Mutually-exclusive roles within the school',
-  `groups` text COMMENT 'Serialized array of group IDs of which this user is a member',
+  `role` enum('faculty','staff','student','advisor','no-menu','alum','departed') NOT NULL DEFAULT 'no-menu' COMMENT 'Mutually-exclusive roles within the school',
+  `modified` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'Timestamp of last modification of this user',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
-LOCK TABLES `users` WRITE;
-/*!40000 ALTER TABLE `users` DISABLE KEYS */;
-
-INSERT INTO `users` (`id`, `role`, `groups`)
-VALUES
-	(1,'faculty','a:3:{i:0;i:5;i:1;i:11;i:2;i:12;}');
-
-/*!40000 ALTER TABLE `users` ENABLE KEYS */;
-UNLOCK TABLES;
 
 
 
