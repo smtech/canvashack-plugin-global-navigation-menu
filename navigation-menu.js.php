@@ -53,6 +53,16 @@ class Menu extends MenuItem {
 	}
 }
 
+if (empty($_REQUEST['current_user'])) {
+	echo "var canvashack = {
+	loadMenus: function () {
+		/* no user, no menu -- them's the breaks! */
+	}
+};
+	";
+	exit;
+}
+
 //$cache->pushKey(basename(__FILE__, '.php'));
 //$cache->pushKey($_REQUEST['current_user']['id']);
 //$cache->pushKey($_REQUEST['location']);
