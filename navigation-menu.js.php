@@ -13,7 +13,7 @@ class MenuItem {
 	}
 
 	public function __toString() {
-		return 	'<li class="ReactTray-list-item">
+		return 	'<li class="ReactTray-list-item"' . (empty($this->css) ? '' : 'style="' . $this->css . '"') . '>
 					<a href="' . $this->url . '" target="' . $this->target . '" class="ReactTray-list-item__link">' . $this->title . '</a>
 					<div class="ReactTray-list-item__helper-text" >' . $this->subtitle . '</div>
 				</li>';

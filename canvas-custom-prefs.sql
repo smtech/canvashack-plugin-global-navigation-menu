@@ -7,7 +7,7 @@
 #
 # Host: 127.0.0.1 (MySQL 5.5.49-0ubuntu0.14.04.1)
 # Database: canvas-custom-prefs
-# Generation Time: 2016-06-10 12:17:47 +0000
+# Generation Time: 2016-07-19 20:43:21 +0000
 # ************************************************************
 
 
@@ -110,6 +110,7 @@ CREATE TABLE `menu-items` (
   `order` int(11) NOT NULL DEFAULT '0' COMMENT 'Order of menus or menu items within a menu (menus or menu items with equal order will be displayed alphabetically by title)',
   `title` varchar(100) DEFAULT NULL COMMENT 'Display title of the menu or menu item',
   `subtitle` varchar(100) DEFAULT NULL COMMENT 'Optional subtitle for menu items',
+  `css` text COMMENT 'CSS styling applied to the enclosing list item for this link',
   `svg` text COMMENT 'SVG icon for menus (set no fill color: the SVG will be styled by the Canvas theme)',
   `target` text COMMENT 'HREF target for menu or menu item URL',
   `url` text COMMENT 'HREF for menu or menu item (menus with a non-anchor HREF will not open -- they will immediately redirect to the URL)',
