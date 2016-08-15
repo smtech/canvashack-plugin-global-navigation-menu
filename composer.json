@@ -3,8 +3,8 @@
     "description": "Add additional menus to the global navigation in Canvas",
     "type": "canvashack-plugin",
     "require": {
-        "battis/simplecache": "~1.0",
-        "battis/appmetadata": "~1.0"
+        "battis/simplecache": "*",
+        "battis/appmetadata": "*"
     },
     "license": "GPL-3.0",
     "authors": [
@@ -13,5 +13,9 @@
             "email": "sethbattis@stmarksschool.org"
         }
     ],
-    "minimum-stability": "dev"
+    "autoload": {
+        "psr-4": {
+            "smtech\\CanvasHack\\Plugin\\GlobalNavigationMenu\\": "src"
+        }
+    }
 }

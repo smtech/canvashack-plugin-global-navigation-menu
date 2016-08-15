@@ -10,8 +10,7 @@
 		</author>
 	</authors>
 	<components>
-		<javascript>navigation-menu.js.php</javascript>
-		<css>navbar.css</css>
+		<javascript>navigation-menu.js</javascript>
 		<canvas>
 			<pages>
 				<include>
