@@ -5,6 +5,17 @@ require_once __DIR__ . '/common.inc.php';
 use smtech\CanvasHack\Plugin\GlobalNavigationMenu\MenuItem;
 use smtech\CanvasHack\Plugin\GlobalNavigationMenu\Menu;
 
+if (empty($_REQUEST['current_user'])) {
+    echo  "
+var canvashack = {
+  loadMenus: function() {
+    console.log('CanvasHack: Global navigation menus were not loaded because no user is logged in.');
+  }
+};
+";
+    exit;
+}
+
 /*
  * TODO is it worth trying to cache this?
  */
