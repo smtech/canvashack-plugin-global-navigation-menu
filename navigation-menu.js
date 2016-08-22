@@ -99,7 +99,7 @@ var canvashack = {
     "use strict";
     <?php
       foreach ($menus as $id => $menu) {
-        echo "this.addMenuItem('{$menu->title}','{$menu->url}', '" . preg_replace('%(\n|\r|\t)%', ' ', $menu->svg) . "', 'tray{$id}', null, 'global_nav_profile_link');" . PHP_EOL;
+        echo "this.addMenuItem('{$menu->title}','{$menu->url}', '" . preg_replace('%(\n|\r|\t)%', ' ', $menu->svg) . "', 'tray{$id}');" . PHP_EOL;
       }
     ?>
   }
