@@ -71,5 +71,8 @@ while ($item = $response->fetch_assoc()) {
 }
 $trays = [];
 foreach ($menus as $id => $menu) {
-    $trays["tray$id"] = "tray$id: '" . preg_replace('/(\n|\r|\t)/', ' ', $menu) . "'";
+    $toolbox->smarty_assign([
+        'menu' => $menu
+    ]);
+    $trays["tray$id"] = "tray$id: '" . preg_replace('/(\n|\r|\t)/', ' ', $toolbox->getSmarty()->fetch(tray.tpl)) . "'";
 }

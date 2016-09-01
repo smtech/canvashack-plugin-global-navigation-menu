@@ -17,12 +17,4 @@ class MenuItem
             $this->$key = $value;
         }
     }
-
-    public function __toString()
-    {
-        return     '<li class="ReactTray-list-item" style="' . $this->css . '">
-                    <a href="' . $this->baseUrl . '/click.php?item=' . $this->id . '&user_id=' . $this->userId . '&location=' . $this->location . '" target="' . $this->target . '" class="ReactTray-list-item__link">' . $this->title . '</a>
-                    <div class="ReactTray-list-item__helper-text" >' . $this->subtitle . '</div>
-                </li>';
-    }
 }
