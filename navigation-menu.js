@@ -32,7 +32,7 @@ var canvashack = {
     /* change menu item highlight */
     var previousSelection = $('.ic-app-header__menu-list-item--active').removeClass('ic-app-header__menu-list-item--active');
     $('#' + id).addClass('ic-app-header__menu-list-item--active');
-    $('#canvashack_tray_close').on('click', function () {
+    $('.canvashack_tray_close').on('click', function () {
       self.hideMyTray(id, previousSelection);
     });
 
@@ -51,7 +51,7 @@ var canvashack = {
     var self = this;
 
     /* hide my tray */
-    $('#canvashack_global-navigation-menu').remove();
+    $('.ReactTrayPortal .canvashack_global-navigation-menu').remove();
     $('#' + id).off('click.canvashack.global-navigation-menu').on('click.canvashack.global-navigation-menu', function() {
       self.showMyTray(id);
     });

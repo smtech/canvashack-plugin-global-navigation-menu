@@ -4,9 +4,9 @@ namespace smtech\CanvasHack\Plugin\GlobalNavigationMenu;
 
 class MenuItem
 {
-    protected $baseUrl;
-    protected $userId;
-    protected $location;
+    public $baseUrl;
+    public $userId;
+    public $location;
 
     public function __construct($row, $baseUrl, $userId, $location)
     {

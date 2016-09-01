@@ -69,10 +69,12 @@ while ($item = $response->fetch_assoc()) {
         );
     }
 }
+$smarty = new Smarty();
+$smarty->addTemplateDir(__DIR__ . '/templates');
 $trays = [];
 foreach ($menus as $id => $menu) {
-    $toolbox->smarty_assign([
+    $smarty->assign([
         'menu' => $menu
     ]);
-    $trays["tray$id"] = "tray$id: '" . preg_replace('/(\n|\r|\t)/', ' ', $toolbox->getSmarty()->fetch(tray.tpl)) . "'";
+    $trays["tray$id"] = "tray$id: '" . preg_replace('/(\n|\r|\t)/', ' ', $smarty->fetch('tray.tpl')) . "'";
 }
