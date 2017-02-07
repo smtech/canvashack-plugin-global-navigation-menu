@@ -99,11 +99,15 @@ var canvashack = {
     "use strict";
     <?php
       foreach ($menus as $id => $menu) {
-        echo "this.addMenuItem('{$menu->title}','{$menu->baseUrl}/click.php?" . http_build_query([
-        'item' => $menu->id,
-        'user_id' => $menu->userId,
-        'location' => $menu->location
-        ]) . "', '" . preg_replace('%(\n|\r|\t)%', ' ', $menu->svg) . "', 'tray{$id}');" . PHP_EOL;
+        echo "this.addMenuItem('{$menu->title}'," . (
+          $menu->url != '#' ?
+            "'{$menu->baseUrl}/click.php?" . http_build_query([
+              'item' => $menu->id,
+              'user_id' => $menu->userId,
+              'location' => $menu->location
+            ]) . "'" :
+            "'{$menu->url}'"
+          ) . ", '" . preg_replace('%(\n|\r|\t)%', ' ', $menu->svg) . "', 'tray{$id}');" . PHP_EOL;
       }
     ?>
   }
